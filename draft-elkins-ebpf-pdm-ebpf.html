@@ -1,0 +1,1623 @@
+<!DOCTYPE html>
+<html lang="en" class="Internet-Draft">
+<head>
+<meta charset="utf-8">
+<meta content="Common,Latin" name="scripts">
+<meta content="initial-scale=1.0" name="viewport">
+<title>Performance Evaluation of PDM Implementation using eBPF in TC versus Traditional Kernel Methods</title>
+<meta content="Chinmay" name="author">
+<meta content="
+       RFC8250 describes an optional Destination Option (DO) header embedded in each packet to provide sequence numbers and timing information as a basis for measurements. As kernel implementation can be complex and time-consuming, this document describes the implementation of the Performance and Diagnostic Metrics (PDM) extension header using eBPF in the Linux kernel's Traffic Control (TC) subsystem. The document also provides a performance analysis of the eBPF implementation in comparison to the traditional kernel implementation. 
+    " name="description">
+<meta content="xml2rfc 3.19.4" name="generator">
+<meta content="next generation" name="keyword">
+<meta content="unicorn" name="keyword">
+<meta content="sparkling distributed ledger" name="keyword">
+<meta content="draft-elkins-ebpf-pdm-ebpf-latest" name="ietf.draft">
+<!-- Generator version information:
+  xml2rfc 3.19.4
+    Python 3.11.6
+    ConfigArgParse 1.7
+    google-i18n-address 3.1.0
+    intervaltree 3.1.0
+    Jinja2 3.1.2
+    lxml 4.9.3
+    platformdirs 4.2.0
+    pycountry 22.3.5
+    PyYAML 6.0.1
+    requests 2.31.0
+    setuptools 68.2.2
+    six 1.16.0
+    wcwidth 0.2.13
+-->
+<link href="draft-elkins-ebpf-pdm-ebpf.xml" rel="alternate" type="application/rfc+xml">
+<link href="#copyright" rel="license">
+<style type="text/css">@font-face {
+  font-family: 'Lora';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Lora Italic'), local('Lora-Italic'), url('https://martinthomson.github.io/rfc-css/fonts/lora-italic-cyrillic-ext.woff2') format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C88, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Lora Italic'), local('Lora-Italic'), url('https://martinthomson.github.io/rfc-css/fonts/lora-italic-cyrillic-ext.woff2') format('woff2');
+  unicode-range: U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Lora Italic'), local('Lora-Italic'), url('https://martinthomson.github.io/rfc-css/fonts/lora-italic-vietnamese.woff2') format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+1EA0-1EF9, U+20AB;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Lora Italic'), local('Lora-Italic'), url('https://martinthomson.github.io/rfc-css/fonts/lora-italic-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-024F, U+0259, U+1E00-1EFF, U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+  font-family: 'Lora';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Lora Italic'), local('Lora-Italic'), url('https://martinthomson.github.io/rfc-css/fonts/lora-italic-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Lora Regular'), local('Lora-Regular'), url('https://martinthomson.github.io/rfc-css/fonts/lora-regular-cyrillic-ext.woff2') format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C88, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Lora Regular'), local('Lora-Regular'), url('https://martinthomson.github.io/rfc-css/fonts/lora-regular-cyrillic.woff2') format('woff2');
+  unicode-range: U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Lora Regular'), local('Lora-Regular'), url('https://martinthomson.github.io/rfc-css/fonts/lora-regular-vietnamese.woff2') format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+1EA0-1EF9, U+20AB;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Lora Regular'), local('Lora-Regular'), url('https://martinthomson.github.io/rfc-css/fonts/lora-regular-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-024F, U+0259, U+1E00-1EFF, U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Lora Regular'), local('Lora-Regular'), url('https://martinthomson.github.io/rfc-css/fonts/lora-regular-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: local('Lora Bold'), local('Lora-Bold'), url('https://martinthomson.github.io/rfc-css/fonts/lora-bold-cyrillic-ext.woff2') format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C88, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: local('Lora Bold'), local('Lora-Bold'), url('https://martinthomson.github.io/rfc-css/fonts/lora-bold-cyrillic.woff2') format('woff2');
+  unicode-range: U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: local('Lora Bold'), local('Lora-Bold'), url('https://martinthomson.github.io/rfc-css/fonts/lora-bold-vietnamese.woff2') format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+1EA0-1EF9, U+20AB;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: local('Lora Bold'), local('Lora-Bold'), url('https://martinthomson.github.io/rfc-css/fonts/lora-bold-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-024F, U+0259, U+1E00-1EFF, U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: local('Lora Bold'), local('Lora-Bold'), url('https://martinthomson.github.io/rfc-css/fonts/lora-bold-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: local('Lora SemiBold'), local('Lora-SemiBold'), url('https://martinthomson.github.io/rfc-css/fonts/lora-semibold-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Cabin Condensed';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: local('Cabin Condensed SemiBold'), local('CabinCondensed-SemiBold'), url('https://martinthomson.github.io/rfc-css/fonts/cabincondensed-semibold-vietnamese.woff2') format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+1EA0-1EF9, U+20AB;
+}
+@font-face {
+  font-family: 'Cabin Condensed';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: local('Cabin Condensed SemiBold'), local('CabinCondensed-SemiBold'), url('https://martinthomson.github.io/rfc-css/fonts/cabincondensed-semibold-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-024F, U+0259, U+1E00-1EFF, U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Cabin Condensed';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: local('Cabin Condensed SemiBold'), local('CabinCondensed-SemiBold'), url('https://martinthomson.github.io/rfc-css/fonts/cabincondensed-semibold-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Oxygen Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Oxygen Mono'), local('OxygenMono-Regular'), url('https://martinthomson.github.io/rfc-css/fonts/oxygenmono-regular-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-024F, U+0259, U+1E00-1EFF, U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Oxygen Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Oxygen Mono'), local('OxygenMono-Regular'), url('https://martinthomson.github.io/rfc-css/fonts/oxygenmono-regular-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+:root {
+  color-scheme: light dark;
+  --background-color: #fff;
+  --text-color: #222;
+  --title-color: #191919;
+  --link-color: #2a6496;
+  --highlight-color: #f9f9f9;
+  --line-color: #eee;
+  --pilcrow-weak: #ddd;
+  --pilcrow-strong: #bbb;
+  --small-font-size: 14.5px;
+  --font-mono: 'Oxygen Mono', monospace;
+  scrollbar-color: #bbb #eee;
+}
+body {
+  max-width: 600px;
+  margin: 75px auto;
+  padding: 0 5px;
+  color: var(--text-color);
+  background-color: var(--background-color);
+  font: 16px/22px "Lora", serif;
+  scroll-behavior: smooth;
+}
+
+.ears {
+  display: none;
+}
+
+/* headings */
+h1, h2, h3, h4, h5, h6 {
+  font-family: "Cabin Condensed", sans-serif;
+  font-weight: 600;
+  margin: 0.8em 0 0.3em;
+  font-size-adjust: 0.5;
+  color: var(--title-color);
+}
+h1#title {
+  font-size: 32px;
+  line-height: 40px;
+  clear: both;
+}
+h1#title, h1#rfcnum {
+  margin: 1.5em 0 0.2em;
+}
+h1#rfcnum + h1#title {
+  margin: 0.2em 0;
+}
+
+h1, h2, h3 {
+  font-size: 22px;
+  line-height: 27px;
+}
+h4, h5, h6 {
+  font-size: 20px;
+  line-height: 24px;
+}
+
+/* general structure */
+.author {
+  padding-bottom: 0.3em;
+}
+#abstract+p {
+  font-size: 18px;
+  line-height: 24px;
+}
+#abstract+p code, #abstract+p samp, #abstract+p tt {
+  font-size: 16px;
+  line-height: 0;
+}
+
+p {
+  padding: 0;
+  margin: 0.5em 0;
+  text-align: left;
+}
+div {
+  margin: 0;
+}
+.alignRight.art-text {
+  background-color: var(--highlight-color);
+  border: 1px solid var(--line-color);
+  border-radius: 3px;
+  padding: 0.5em 1em 0;
+  margin-bottom: 0.5em;
+}
+.alignRight.art-text pre {
+  padding: 0;
+  width: auto;
+}
+.alignRight {
+  margin: 1em 0;
+}
+.alignRight > *:first-child {
+  border: none;
+  margin: 0;
+  float: right;
+  clear: both;
+}
+.alignRight > *:nth-child(2) {
+  clear: both;
+  display: block;
+  border: none;
+}
+svg {
+  display: block;
+}
+/* font-family isn't space-separated, but =~ will have to do */
+svg[font-family~="monospace" i], svg [font-family~="monospace" i] {
+  font-family: var(--font-mono);
+}
+.alignCenter.art-text {
+  background-color: var(--highlight-color);
+  border: 1px solid var(--line-color);
+  border-radius: 3px;
+  padding: 0.5em 1em 0;
+  margin-bottom: 0.5em;
+}
+.alignCenter.art-text pre {
+  padding: 0;
+  width: auto;
+}
+.alignCenter {
+  margin: 1em 0;
+}
+.alignCenter > *:first-child {
+  border: none;
+  /* this isn't optimal, but it's an existence proof.  PrinceXML doesn't
+     support flexbox yet.
+  */
+  display: table;
+  margin: 0 auto;
+}
+
+/* lists */
+ol, ul {
+  padding: 0;
+  margin: 0 0 0.5em 2em;
+}
+:is(ol, ul) :is(ol, ul) {
+  margin-left: 1em;
+}
+li {
+  margin: 0 0 0.25em 0;
+}
+.ulCompact li {
+  margin: 0;
+}
+ul.empty, .ulEmpty {
+  list-style-type: none;
+}
+ul.empty li, .ulEmpty li {
+  margin-top: 0.5em;
+}
+:is(ul, ol).compact, .ulCompact, .olCompact {
+  line-height: 1;
+  margin: 0 0 0 2em;
+}
+
+/* definition lists */
+dl {
+  clear: left;
+  --indent: 3ch;
+  /* --indent: attr(indent ch); not supported in any browser, but we can dream */
+}
+dl.olPercent {
+  --indent: 5ch;
+}
+dl > dt {
+  float: left;
+  margin-right: 2ch;
+  min-width: 8ch;
+}
+dl.dlNewline > dt {
+  float: none;
+}
+dl > dd {
+  margin-bottom: .8em;
+  margin-left: var(--indent) !important; /* stupid element overrides */
+  min-height: 2ex;
+}
+dl.olPercent > dt {
+  min-width: calc(var(--indent) - 2ch);
+}
+:is(dl.compact, .dlCompact) > dd {
+  margin-bottom: 0;
+}
+:is(dl.compact, .dlCompact) > dd > :is(:first-child, .break:first-child + *) {
+  margin-top: 0;
+}
+:is(dl.compact, .dlCompact) > dd > :is(:last-child) {
+  margin-bottom: 0;
+}
+dl > dd > dl {
+  margin-top: 0.5em;
+  margin-bottom: 0;
+}
+:is(dd, span).break {
+  display: none;
+}
+
+/* links */
+a, a[href].selfRef:hover {
+  text-decoration: none;
+}
+a[href] {
+  color: var(--link-color);
+}
+a[href].selfRef, .iref + a[href].internal {
+  color: var(--text-color);
+}
+a[href]:hover {
+  text-decoration: underline;
+}
+a[href].selfRef:hover {
+  background-color: var(--highlight-color);
+}
+a.xref:is(.cite, .auto), :is(#status-of-memo, #copyright) a {
+  white-space: nowrap;
+}
+
+/* Figures */
+tt, code, pre {
+  background-color: var(--highlight-color);
+  font: 14px/22px var(--font-mono);
+}
+tt, code {
+  /* changing the font for inline elements leads to different ascender
+     and descender heights; as we want to retain baseline alignment,
+     remove leading to avoid altering the final height of lines
+     note: this fails if these blocks take an entire line,
+     a different solution would be great */
+  line-height: 0;
+}
+:is(h1, h2, h3, h4, h5, h6) :is(tt, code) {
+  font-size: 84%;
+}
+pre {
+  border: 1px solid var(--line-color);
+  font-size: 13.5px;
+  line-height: 16px;
+  letter-spacing: -0.2px;
+  margin: 5px;
+  padding: 5px;
+}
+img {
+  max-width: 100%;
+}
+figure {
+  margin: 0.5em 0;
+  padding: 0;
+}
+figure blockquote {
+  margin: 0.8em 0.4em 0.4em;
+}
+figcaption, caption {
+  font-style: italic;
+  margin: 0.5em 1.5em;
+  text-align: left;
+}
+@media screen {
+  /* Auto-collapse boilerplate. */
+  :is(#status-of-memo, #copyright) p {
+    margin: -2px 0;
+    max-height: 0;
+    transition: max-height 2s ease, margin 0.5s ease 0.5s;
+    overflow: hidden;
+  }
+  :is(#status-of-memo, #copyright):hover p,
+  :is(#status-of-memo, #copyright) h2:target ~ p {
+    margin: 0.5em 0;
+    max-height: 500px;
+    overflow: auto;
+  }
+  pre, svg {
+    display: inline-block;
+    overflow-x: auto;
+  }
+  pre {
+    max-width: 100%;
+    width: calc(100% - 22px - 1em);
+  }
+  svg {
+    max-width: calc(100% - 22px - 1em);
+  }
+  figure pre {
+    display: block;
+    width: calc(100% - 25px);
+  }
+  :is(pre, svg) + .pilcrow {
+    display: inline-block;
+    vertical-align: text-bottom;
+    padding-bottom: 8px;
+  }
+}
+
+/* aside, blockquote */
+aside, blockquote {
+  margin-left: 0;
+  padding: 0 2em;
+  font-style: italic;
+}
+blockquote {
+  margin: 1em 0;
+}
+cite {
+  display: block;
+  text-align: right;
+  font-style: italic;
+}
+
+/* tables */
+table {
+  max-width: 100%;
+  margin: 0 0 1em;
+  border-collapse: collapse;
+}
+table.right {
+  margin-left: auto;
+}
+table.center {
+  margin-left: auto;
+  margin-right: auto;
+}
+table.left {
+  margin-right: auto;
+}
+thead, tbody {
+  border: 1px solid var(--line-color);
+}
+th, td {
+  text-align: left;
+  vertical-align: top;
+  padding: 5px 10px;
+}
+th {
+  background-color: var(--line-color);
+}
+:is(tr:nth-child(2n), thead+tbody > tr:nth-child(2n+1)) > td {
+  background-color: var(--background-color);
+}
+:is(tr:nth-child(2n+1), thead+tbody > tr:nth-child(2n)) > td {
+  background-color: var(--highlight-color);
+}
+table caption {
+  margin: 0;
+  padding: 3px 0 3px 1em;
+}
+table p {
+  margin: 0;
+}
+
+/* pilcrow */
+a.pilcrow {
+  margin-left: 3px;
+  opacity: 0.2;
+  user-select: none;
+}
+a.pilcrow[href] { color: var(--pilcrow-weak); }
+a.pilcrow[href]:hover { text-decoration: none; }
+@media not print {
+  :hover > a.pilcrow {
+    opacity: 1;
+  }
+  a.pilcrow[href]:hover {
+    color: var(--pilcrow-strong);
+    background-color: transparent;
+  }
+}
+@media print {
+  a.pilcrow {
+    display: none;
+  }
+}
+
+/* misc */
+hr {
+  border: 0;
+  border-top: 1px solid var(--line-color);
+}
+.bcp14 {
+  font-variant: small-caps;
+  font-weight: 600;
+  font-size: var(--small-font-size);
+}
+.role {
+  font-variant: all-small-caps;
+}
+sub, sup {
+  line-height: 1;
+  font-size: 80%;
+}
+
+/* info block */
+#identifiers {
+  margin: 0;
+  font-size: var(--small-font-size);
+  line-height: 18px;
+  --identifier-width: 15ch;
+}
+#identifiers dt {
+  width: var(--identifier-width);
+  min-width: var(--identifier-width);
+  clear: left;
+  float: left;
+  text-align: right;
+  margin-right: 1ch;
+}
+#identifiers dd {
+  margin: 0;
+  margin-left: calc(1em + var(--identifier-width)) !important;
+  min-width: 5em;
+}
+#identifiers .authors .author {
+  display: inline-block;
+  margin-right: 1.5em;
+}
+#identifiers .authors .org {
+  font-style: italic;
+}
+
+/* The prepared/rendered info at the very bottom of the page */
+.docInfo {
+  color: #999;
+  font-size: 0.9em;
+  font-style: italic;
+  margin-top: 2em;
+}
+.docInfo .prepared {
+  float: left;
+}
+.docInfo .prepared {
+  float: right;
+}
+
+/* table of contents */
+#toc {
+  padding: 0.75em 0 2em 0;
+  margin-bottom: 1em;
+}
+#toc nav ul {
+  margin: 0 0.5em 0 0;
+  padding: 0;
+  list-style: none;
+}
+#toc nav li {
+  line-height: 1.3em;
+  margin: 2px 0;
+  padding-left: 1.2em;
+  text-indent: -1.2em;
+}
+#toc a.xref {
+  white-space: normal;
+}
+/* references */
+.references dt {
+  text-align: right;
+  font-weight: bold;
+  min-width: 10ch;
+  margin-right: 1.5ch;
+}
+.references dt:target::before {
+  content: "⇒";
+  width: 15px;
+  margin: 0 10px 0 -25px;
+}
+.references dd {
+  margin-left: 12ch !important;
+  overflow: auto;
+}
+
+.refInstance {
+  margin-bottom: 1.25em;
+}
+
+.references .ascii {
+  margin-bottom: 0.25em;
+}
+
+/* index */
+#rfc\.index\.index + ul {
+  margin-left: 0;
+}
+
+/* authors */
+address.vcard {
+  font-style: normal;
+  margin: 1em 0;
+}
+address.vcard .nameRole {
+  font-weight: 700;
+  margin-left: 0;
+}
+address.vcard .label {
+  margin: 0.5em 0;
+}
+address.vcard .type {
+  display: none;
+}
+.alternative-contact {
+  margin: 1.5em 0 1em;
+}
+hr.addr {
+  border-top: 1px dashed;
+  margin: 0;
+  color: #ddd;
+  max-width: calc(100% - 16px);
+}
+@media (min-width: 500px) {
+  #authors-addresses > section {
+    column-count: 2;
+    column-gap: 20px;
+  }
+  #authors-addresses > section > h2 {
+    column-span: all;
+  }
+  /* hack for break-inside: avoid-column */
+  #authors-addresses address {
+    display: inline-block;
+    break-inside: avoid-column;
+  }
+}
+
+.rfcEditorRemove p:first-of-type {
+  font-style: italic;
+}
+.cref {
+  background-color: rgba(249, 232, 105, 0.3);
+  padding: 2px 4px;
+}
+.crefSource {
+  font-style: italic;
+}
+/* alternative layout for smaller screens */
+@media screen and (max-width: 929px) {
+  #toc {
+    position: fixed;
+    z-index: 2;
+    top: 0;
+    right: 0;
+    padding: 1px 0 0 0;
+    margin: 0;
+    border-bottom: 1px solid #ccc;
+    opacity: 0.6;
+  }
+  #toc.active {
+      opacity: 1;
+  }
+  #toc h2 {
+    margin: 0;
+    padding: 2px 0 2px 6px;
+    padding-right: 1em;
+    font-size: 18px;
+    line-height: 24px;
+    min-width: 190px;
+    text-align: right;
+    background-color: #444;
+    color: white;
+    cursor: pointer;
+  }
+  #toc h2::before { /* css hamburger */
+    float: right;
+    position: relative;
+    width: 1em;
+    height: 1px;
+    left: -164px;
+    margin: 8px 0 0 0;
+    background: white none repeat scroll 0 0;
+    box-shadow: 0 4px 0 0 white, 0 8px 0 0 white;
+    content: "";
+  }
+  #toc nav {
+    display: none;
+    background-color: var(--background-color);
+    padding: 0.5em 1em 1em;
+    overflow: auto;
+    overscroll-behavior: contain;
+    height: calc(100vh - 48px);
+    border-left: 1px solid #ddd;
+  }
+  #toc.active nav {
+    display: block;
+  }
+  /* Make the collapsed ToC header render white on gray also when it's a link */
+  #toc h2 a,
+  #toc h2 a:link,
+  #toc h2 a:focus,
+  #toc h2 a:hover,
+  #toc a.toplink,
+  #toc a.toplink:hover {
+    color: white;
+    background-color: #444;
+    text-decoration: none;
+  }
+  #toc a.toplink {
+    margin-top: 2px;
+  }
+}
+
+/* alternative layout for wide screens */
+@media screen and (min-width: 930px) {
+  body {
+    padding-right: 360px;
+    padding-right: calc(min(180px + 20%, 500px));
+  }
+  #toc {
+    position: fixed;
+    bottom: 0;
+    right: 0;
+    right: calc(50vw - 480px);
+    width: 312px;
+    margin: 0;
+    padding: 0;
+    z-index: 1;
+  }
+  #toc h2 {
+    margin: 0;
+    padding: 0.25em 1em 1em 0;
+  }
+  #toc nav {
+    display: block;
+    height: calc(90vh - 84px);
+    bottom: 0;
+    padding: 0.5em 0 2em;
+    overflow: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+  }
+  #toc nav > ul  {
+    margin-bottom: 2em;
+  }
+  #toc ul {
+    margin: 0 0 0 4px;
+    font-size: var(--small-font-size);
+  }
+  #toc ul :is(p, li) {
+    margin: 2px 0;
+    line-height: 22px;
+  }
+  img { /* future proofing */
+    max-width: 100%;
+    height: auto;
+  }
+}
+
+/* pagination */
+@media print {
+  body {
+    width: 100%;
+  }
+  p {
+    orphans: 3;
+    widows: 3;
+  }
+  #n-copyright-notice {
+    border-bottom: none;
+  }
+  #toc, #n-introduction {
+    page-break-before: always;
+  }
+  #toc {
+    border-top: none;
+    padding-top: 0;
+  }
+  figure, pre, .vcard {
+    page-break-inside: avoid;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    page-break-after: avoid;
+  }
+  :is(h2, h3, h4, h5, h6)+*, dd {
+    page-break-before: avoid;
+  }
+  pre {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    font-size: 10pt;
+  }
+  table {
+    border: 1px solid #ddd;
+  }
+  td {
+    border-top: 1px solid #ddd;
+  }
+  .toplink {
+    display: none;
+  }
+}
+
+@page :first {
+  padding-top: 0;
+  @top-left {
+    content: normal;
+    border: none;
+  }
+  @top-center {
+    content: normal;
+    border: none;
+  }
+  @top-right {
+    content: normal;
+    border: none;
+  }
+}
+
+@page {
+  size: A4;
+  margin-bottom: 45mm;
+  padding-top: 20px;
+}
+
+/* Changes introduced to fix issues found during implementation */
+
+/* Separate body from document info even without intervening H1 */
+section {
+  clear: both;
+}
+
+/* Top align author divs, to avoid names without organization dropping level with org names */
+.author {
+  vertical-align: top;
+}
+
+/* Style section numbers with more space between number and title */
+.section-number {
+  padding-right: 0.5em;
+}
+
+/* Add styling for a link in the ToC that points to the top of the document */
+a.toplink {
+  float: right;
+  margin: 8px 0.5em 0;
+}
+
+/* Provide styling for table cell text alignment */
+table .text-left {
+  text-align: left;
+}
+table .text-center {
+  text-align: center;
+}
+table .text-right {
+  text-align: right;
+}
+
+/* Make the alternative author contact information look less like just another
+   author, and group it closer with the primary author contact information */
+.alternative-contact {
+  margin: 0.5em 0 0.25em 0;
+}
+address .non-ascii {
+  margin: 0 0 0 2em;
+}
+
+/* With it being possible to set tables with alignment
+  left, center, and right, { width: 100%; } does not make sense */
+table {
+  width: auto;
+}
+
+/* Avoid reference text that sits in a block with very wide left margin,
+   because of a long floating dt label.*/
+.references dd {
+  overflow: visible;
+}
+
+/* Control caption placement */
+caption {
+  caption-side: bottom;
+}
+
+/* Limit the width of the author address vcard, so names in right-to-left
+   script don't end up on the other side of the page. */
+
+address.vcard {
+  max-width: 20em;
+  margin-right: auto;
+}
+
+/* For address alignment dependent on LTR or RTL scripts */
+address div.left {
+  text-align: left;
+}
+address div.right {
+  text-align: right;
+}
+
+/* Dark mode. */
+@media (prefers-color-scheme: dark) {
+:root {
+  --background-color: #121212;
+  --text-color: #f0f0f0;
+  --title-color: #fff;
+  --link-color: #4da4f0;
+  --highlight-color: #282828;
+  --line-color: #444;
+  --pilcrow-weak: #444;
+  --pilcrow-strong: #666;
+  scrollbar-color: #777 #333;
+}
+}
+
+/* SVG Trick: a prefix match works because only black and white are allowed */
+svg :is([stroke="black"], [stroke^="#000"]) {
+  stroke: var(--text-color);
+}
+svg :is([stroke="white"], [stroke^="#fff"]) {
+  stroke: var(--background-color);
+}
+svg :is([fill="black"], [fill^="#000"], :not([fill])) {
+  fill: var(--text-color);
+}
+svg :is([fill="white"], [fill^="#fff"]) {
+  fill: var(--background-color);
+}
+</style>
+
+</head>
+<body class="xml2rfc">
+<table class="ears">
+<thead><tr>
+<td class="left">Internet-Draft</td>
+<td class="center">pdm-ebpf</td>
+<td class="right">February 2024</td>
+</tr></thead>
+<tfoot><tr>
+<td class="left">Chinmay</td>
+<td class="center">Expires 21 August 2024</td>
+<td class="right">[Page]</td>
+</tr></tfoot>
+</table>
+<div id="external-metadata" class="document-information"></div>
+<div id="internal-metadata" class="document-information">
+<dl id="identifiers">
+<dt class="label-workgroup">Workgroup:</dt>
+<dd class="workgroup">Network Working Group</dd>
+<dt class="label-internet-draft">Internet-Draft:</dt>
+<dd class="internet-draft">draft-elkins-ebpf-pdm-ebpf-latest</dd>
+<dt class="label-published">Published:</dt>
+<dd class="published">
+<time datetime="2024-02-18" class="published">18 February 2024</time>
+    </dd>
+<dt class="label-intended-status">Intended Status:</dt>
+<dd class="intended-status">Informational</dd>
+<dt class="label-expires">Expires:</dt>
+<dd class="expires"><time datetime="2024-08-21">21 August 2024</time></dd>
+<dt class="label-authors">Author:</dt>
+<dd class="authors">
+<div class="author">
+      <div class="author-name">Chinmay</div>
+<div class="org">NITK Surathkal</div>
+</div>
+</dd>
+</dl>
+</div>
+<h1 id="title">Performance Evaluation of PDM Implementation using eBPF in TC versus Traditional Kernel Methods</h1>
+<section id="section-abstract">
+      <h2 id="abstract"><a href="#abstract" class="selfRef">Abstract</a></h2>
+<p id="section-abstract-1">RFC8250 describes an optional Destination Option (DO) header embedded in each packet to provide sequence numbers and timing information as a basis for measurements. As kernel implementation can be complex and time-consuming, this document describes the implementation of the Performance and Diagnostic Metrics (PDM) extension header using eBPF in the Linux kernel's Traffic Control (TC) subsystem. The document also provides a performance analysis of the eBPF implementation in comparison to the traditional kernel implementation.<a href="#section-abstract-1" class="pilcrow">¶</a></p>
+</section>
+<section class="note rfcEditorRemove" id="section-note.1">
+      <h2 id="name-about-this-document">
+<a href="#name-about-this-document" class="section-name selfRef">About This Document</a>
+      </h2>
+<p id="section-note.1-1">This note is to be removed before publishing as an RFC.<a href="#section-note.1-1" class="pilcrow">¶</a></p>
+<p id="section-note.1-2">
+        The latest revision of this draft can be found at <span><a href="https://ChinmayaSharma-hue.github.io/pdm-ebpf-draft/draft-elkins-ebpf-pdm-ebpf.html">https://ChinmayaSharma-hue.github.io/pdm-ebpf-draft/draft-elkins-ebpf-pdm-ebpf.html</a></span>.
+        Status information for this document may be found at <span><a href="https://datatracker.ietf.org/doc/draft-elkins-ebpf-pdm-ebpf/">https://datatracker.ietf.org/doc/draft-elkins-ebpf-pdm-ebpf/</a></span>.<a href="#section-note.1-2" class="pilcrow">¶</a></p>
+<p id="section-note.1-3">Source for this draft and an issue tracker can be found at
+        <span><a href="https://github.com/ChinmayaSharma-hue/pdm-ebpf-draft">https://github.com/ChinmayaSharma-hue/pdm-ebpf-draft</a></span>.<a href="#section-note.1-3" class="pilcrow">¶</a></p>
+</section>
+<div id="status-of-memo">
+<section id="section-boilerplate.1">
+        <h2 id="name-status-of-this-memo">
+<a href="#name-status-of-this-memo" class="section-name selfRef">Status of This Memo</a>
+        </h2>
+<p id="section-boilerplate.1-1">
+        This Internet-Draft is submitted in full conformance with the
+        provisions of BCP 78 and BCP 79.<a href="#section-boilerplate.1-1" class="pilcrow">¶</a></p>
+<p id="section-boilerplate.1-2">
+        Internet-Drafts are working documents of the Internet Engineering Task
+        Force (IETF). Note that other groups may also distribute working
+        documents as Internet-Drafts. The list of current Internet-Drafts is
+        at <span><a href="https://datatracker.ietf.org/drafts/current/">https://datatracker.ietf.org/drafts/current/</a></span>.<a href="#section-boilerplate.1-2" class="pilcrow">¶</a></p>
+<p id="section-boilerplate.1-3">
+        Internet-Drafts are draft documents valid for a maximum of six months
+        and may be updated, replaced, or obsoleted by other documents at any
+        time. It is inappropriate to use Internet-Drafts as reference
+        material or to cite them other than as "work in progress."<a href="#section-boilerplate.1-3" class="pilcrow">¶</a></p>
+<p id="section-boilerplate.1-4">
+        This Internet-Draft will expire on 21 August 2024.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="copyright">
+<section id="section-boilerplate.2">
+        <h2 id="name-copyright-notice">
+<a href="#name-copyright-notice" class="section-name selfRef">Copyright Notice</a>
+        </h2>
+<p id="section-boilerplate.2-1">
+            Copyright (c) 2024 IETF Trust and the persons identified as the
+            document authors. All rights reserved.<a href="#section-boilerplate.2-1" class="pilcrow">¶</a></p>
+<p id="section-boilerplate.2-2">
+            This document is subject to BCP 78 and the IETF Trust's Legal
+            Provisions Relating to IETF Documents
+            (<span><a href="https://trustee.ietf.org/license-info">https://trustee.ietf.org/license-info</a></span>) in effect on the date of
+            publication of this document. Please review these documents
+            carefully, as they describe your rights and restrictions with
+            respect to this document. Code Components extracted from this
+            document must include Revised BSD License text as described in
+            Section 4.e of the Trust Legal Provisions and are provided without
+            warranty as described in the Revised BSD License.<a href="#section-boilerplate.2-2" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="toc">
+<section id="section-toc.1">
+        <a href="#" onclick="scroll(0,0)" class="toplink">▲</a><h2 id="name-table-of-contents">
+<a href="#name-table-of-contents" class="section-name selfRef">Table of Contents</a>
+        </h2>
+<nav class="toc"><ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.1">
+            <p id="section-toc.1-1.1.1"><a href="#section-1" class="auto internal xref">1</a>.  <a href="#name-introduction" class="internal xref">Introduction</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.1.2.1">
+                <p id="section-toc.1-1.1.2.1.1" class="keepWithNext"><a href="#section-1.1" class="auto internal xref">1.1</a>.  <a href="#name-background" class="internal xref">Background</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.1.2.1.2.1">
+                    <p id="section-toc.1-1.1.2.1.2.1.1" class="keepWithNext"><a href="#section-1.1.1" class="auto internal xref">1.1.1</a>.  <a href="#name-pdm" class="internal xref">PDM</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.1.2.1.2.2">
+                    <p id="section-toc.1-1.1.2.1.2.2.1" class="keepWithNext"><a href="#section-1.1.2" class="auto internal xref">1.1.2</a>.  <a href="#name-ebpf" class="internal xref">eBPF</a></p>
+</li>
+                </ul>
+</li>
+            </ul>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.2">
+            <p id="section-toc.1-1.2.1"><a href="#section-2" class="auto internal xref">2</a>.  <a href="#name-conventions-and-definitions" class="internal xref">Conventions and Definitions</a></p>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3">
+            <p id="section-toc.1-1.3.1"><a href="#section-3" class="auto internal xref">3</a>.  <a href="#name-using-tc-bpf-to-add-ipv6-ex" class="internal xref">Using tc-bpf to add IPv6 extension headers</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.1">
+                <p id="section-toc.1-1.3.2.1.1"><a href="#section-3.1" class="auto internal xref">3.1</a>.  <a href="#name-tc-bpf" class="internal xref">tc-bpf</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.2">
+                <p id="section-toc.1-1.3.2.2.1"><a href="#section-3.2" class="auto internal xref">3.2</a>.  <a href="#name-adding-ipv6-extension-heade" class="internal xref">Adding IPv6 extension headers in tc</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.2.2.1">
+                    <p id="section-toc.1-1.3.2.2.2.1.1"><a href="#section-3.2.1" class="auto internal xref">3.2.1</a>.  <a href="#name-ingress-tc-bpf-program" class="internal xref">Ingress tc-bpf program</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.2.2.2">
+                    <p id="section-toc.1-1.3.2.2.2.2.1"><a href="#section-3.2.2" class="auto internal xref">3.2.2</a>.  <a href="#name-egress-tc-bpf-program" class="internal xref">Egress tc-bpf program</a></p>
+</li>
+                </ul>
+</li>
+            </ul>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4">
+            <p id="section-toc.1-1.4.1"><a href="#section-4" class="auto internal xref">4</a>.  <a href="#name-implementation-of-pdm-exten" class="internal xref">Implementation of PDM extension header in tc-bpf</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4.2.1">
+                <p id="section-toc.1-1.4.2.1.1"><a href="#section-4.1" class="auto internal xref">4.1</a>.  <a href="#name-egress-tc-bpf-program-for-p" class="internal xref">Egress TC-BPF program for PDM</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4.2.2">
+                <p id="section-toc.1-1.4.2.2.1"><a href="#section-4.2" class="auto internal xref">4.2</a>.  <a href="#name-ingress-tc-bpf-program-for-" class="internal xref">Ingress TC-BPF program for PDM</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4.2.3">
+                <p id="section-toc.1-1.4.2.3.1"><a href="#section-4.3" class="auto internal xref">4.3</a>.  <a href="#name-implementation-of-pdm-initi" class="internal xref">Implementation of PDM initiation</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4.2.4">
+                <p id="section-toc.1-1.4.2.4.1"><a href="#section-4.4" class="auto internal xref">4.4</a>.  <a href="#name-implementation-of-pdm-termi" class="internal xref">Implementation of PDM termination</a></p>
+</li>
+            </ul>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.5">
+            <p id="section-toc.1-1.5.1"><a href="#section-5" class="auto internal xref">5</a>.  <a href="#name-advantages-of-using-ebpf-to" class="internal xref">Advantages of using eBPF to add extension headers</a></p>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.6">
+            <p id="section-toc.1-1.6.1"><a href="#section-6" class="auto internal xref">6</a>.  <a href="#name-performance-analysis" class="internal xref">Performance Analysis</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.6.2.1">
+                <p id="section-toc.1-1.6.2.1.1"><a href="#section-6.1" class="auto internal xref">6.1</a>.  <a href="#name-experiment-setup" class="internal xref">Experiment Setup</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.6.2.2">
+                <p id="section-toc.1-1.6.2.2.1"><a href="#section-6.2" class="auto internal xref">6.2</a>.  <a href="#name-performance-metrics" class="internal xref">Performance Metrics</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.6.2.3">
+                <p id="section-toc.1-1.6.2.3.1"><a href="#section-6.3" class="auto internal xref">6.3</a>.  <a href="#name-cpu-performance" class="internal xref">CPU Performance</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.6.2.4">
+                <p id="section-toc.1-1.6.2.4.1"><a href="#section-6.4" class="auto internal xref">6.4</a>.  <a href="#name-memory-usage" class="internal xref">Memory Usage</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.6.2.5">
+                <p id="section-toc.1-1.6.2.5.1"><a href="#section-6.5" class="auto internal xref">6.5</a>.  <a href="#name-network-throughput" class="internal xref">Network Throughput</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.6.2.6">
+                <p id="section-toc.1-1.6.2.6.1"><a href="#section-6.6" class="auto internal xref">6.6</a>.  <a href="#name-packet-processing-latency" class="internal xref">Packet Processing Latency</a></p>
+</li>
+            </ul>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7">
+            <p id="section-toc.1-1.7.1"><a href="#section-7" class="auto internal xref">7</a>.  <a href="#name-security-considerations" class="internal xref">Security Considerations</a></p>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.8">
+            <p id="section-toc.1-1.8.1"><a href="#section-8" class="auto internal xref">8</a>.  <a href="#name-iana-considerations" class="internal xref">IANA Considerations</a></p>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.9">
+            <p id="section-toc.1-1.9.1"><a href="#section-9" class="auto internal xref">9</a>.  <a href="#name-normative-references" class="internal xref">Normative References</a></p>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.10">
+            <p id="section-toc.1-1.10.1"><a href="#appendix-A" class="auto internal xref"></a><a href="#name-acknowledgments" class="internal xref">Acknowledgments</a></p>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.11">
+            <p id="section-toc.1-1.11.1"><a href="#appendix-B" class="auto internal xref"></a><a href="#name-authors-address" class="internal xref">Author's Address</a></p>
+</li>
+        </ul>
+</nav>
+</section>
+</div>
+<div id="introduction">
+<section id="section-1">
+      <h2 id="name-introduction">
+<a href="#section-1" class="section-number selfRef">1. </a><a href="#name-introduction" class="section-name selfRef">Introduction</a>
+      </h2>
+<div id="background">
+<section id="section-1.1">
+        <h3 id="name-background">
+<a href="#section-1.1" class="section-number selfRef">1.1. </a><a href="#name-background" class="section-name selfRef">Background</a>
+        </h3>
+<div id="pdm">
+<section id="section-1.1.1">
+          <h4 id="name-pdm">
+<a href="#section-1.1.1" class="section-number selfRef">1.1.1. </a><a href="#name-pdm" class="section-name selfRef">PDM</a>
+          </h4>
+<p id="section-1.1.1-1">The Performance and Diagnostic Metrics (PDM) Extension Header, designated in RFC 8250, introduces a method to discern server processing delays from round trip network delays within IPv6 networks. This extension is a type of Destination Options header, a component of the IPv6 protocol.<a href="#section-1.1.1-1" class="pilcrow">¶</a></p>
+<p id="section-1.1.1-2">The PDM header incorporates several fields, notably Packet Sequence Number This Packet (PSNTP), Packet Sequence Number Last Received (PSNLR), Delta Time Last Received (DTLR), Delta Time Last Sent (DTLS), and scaling factors for these delta times. These elements, when correlated with a unique 5-tuple identifier, facilitate the precise measurement of network and server delays. The PDM header's utility lies in its ability to provide concrete data on network and server performance. By differentiating between the delays caused by network round trips and server processing, it enables quick identification of performance bottlenecks. This distinction is vital for efficient network management and troubleshooting.<a href="#section-1.1.1-2" class="pilcrow">¶</a></p>
+<p id="section-1.1.1-3">Implementations of the PDM header must keep track of sequence numbers and timestamps for both incoming and outgoing packets, associated with each 5-tuple. The header's design emphasizes flexibility in its activation, accuracy in timestamp recording, and configurable parameters for information lifespan and memory allocation as detailed in Section 3.5 of RFC 8250.<a href="#section-1.1.1-3" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="ebpf">
+<section id="section-1.1.2">
+          <h4 id="name-ebpf">
+<a href="#section-1.1.2" class="section-number selfRef">1.1.2. </a><a href="#name-ebpf" class="section-name selfRef">eBPF</a>
+          </h4>
+<p id="section-1.1.2-1">eBPF, an extensible programming framework within the Linux kernel, operates as a virtual machine allowing users to run isolated programs in kernel space, thereby customizing network processing, monitoring, and security without needing kernel recompilation. These user-defined programs are first compiled into eBPF bytecode, followed by a verification process that checks for potential errors such as invalid pointers or array bounds, adding an extra layer of security. Due to their optimized bytecode, eBPF programs run efficiently within the kernel's virtual machine. eBPF offers various hook points within the kernel, such as in the networking stack, enabling users to attach their programs based on specific requirements, like network monitoring or packet modification. This flexibility allows for a tailored kernel behavior to suit different use cases, enhancing the system's functionality and security.<a href="#section-1.1.2-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+</section>
+</div>
+</section>
+</div>
+<div id="conventions-and-definitions">
+<section id="section-2">
+      <h2 id="name-conventions-and-definitions">
+<a href="#section-2" class="section-number selfRef">2. </a><a href="#name-conventions-and-definitions" class="section-name selfRef">Conventions and Definitions</a>
+      </h2>
+<p id="section-2-1">The key words "<span class="bcp14">MUST</span>", "<span class="bcp14">MUST NOT</span>", "<span class="bcp14">REQUIRED</span>", "<span class="bcp14">SHALL</span>", "<span class="bcp14">SHALL NOT</span>", "<span class="bcp14">SHOULD</span>", "<span class="bcp14">SHOULD NOT</span>", "<span class="bcp14">RECOMMENDED</span>", "<span class="bcp14">NOT RECOMMENDED</span>",
+"<span class="bcp14">MAY</span>", and "<span class="bcp14">OPTIONAL</span>" in this document are to be interpreted as
+described in BCP 14 <span>[<a href="#RFC2119" class="cite xref">RFC2119</a>]</span> <span>[<a href="#RFC8174" class="cite xref">RFC8174</a>]</span> when, and only when, they
+appear in all capitals, as shown here.<a href="#section-2-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="using-tc-bpf-to-add-ipv6-extension-headers">
+<section id="section-3">
+      <h2 id="name-using-tc-bpf-to-add-ipv6-ex">
+<a href="#section-3" class="section-number selfRef">3. </a><a href="#name-using-tc-bpf-to-add-ipv6-ex" class="section-name selfRef">Using tc-bpf to add IPv6 extension headers</a>
+      </h2>
+<div id="tc-bpf">
+<section id="section-3.1">
+        <h3 id="name-tc-bpf">
+<a href="#section-3.1" class="section-number selfRef">3.1. </a><a href="#name-tc-bpf" class="section-name selfRef">tc-bpf</a>
+        </h3>
+<p id="section-3.1-1">The cls_bpf component within tc is a classifier that uses BPF, including both classic BPF (cBPF) and extended BPF (eBPF), for packet filtering and classification. It operates in two distinct modes: the original mode, which uses tcf_exts_exec() for executing actions after classification, and a more efficient 'direct action' (da) mode. The da mode, optimized for eBPF, allows cls_bpf to directly perform actions on the socket buffer (skb), such as packet mangling or updating checksums, without the need for traversing multiple layers in the tc action engine. This results in a streamlined process where cls_bpf simply returns a tc opcode, facilitating a compact and efficient skb processing path.
+In direct-action(da) mode, eBPF can store class identifiers (classid) in skb-&gt;tc_classid and return the action opcode, suitable even for simple cBPF operations like drop actions. cls_bpf's flexibility also allows administrators to use multiple classifiers in mixed modes (da and non-da) based on specific use cases. However, for high-performance workloads, a single tc eBPF cls_bpf classifier in da mode is generally sufficient and recommended due to its efficiency.
+One of the features of cls_bpf is its ability to facilitate efficient, non-linear classification. Unlike traditional tc classifiers that may require multiple parsing passes, cls_bpf, with the help of eBPF, can tailor a single program for diverse skb types, avoiding redundant parsing. This efficiency is further optimized through eBPF tail call program constructs, enabling atomic packet parser replacements based on classification outcomes.<a href="#section-3.1-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="adding-ipv6-extension-headers-in-tc">
+<section id="section-3.2">
+        <h3 id="name-adding-ipv6-extension-heade">
+<a href="#section-3.2" class="section-number selfRef">3.2. </a><a href="#name-adding-ipv6-extension-heade" class="section-name selfRef">Adding IPv6 extension headers in tc</a>
+        </h3>
+<p id="section-3.2-1">The traffic control subsystem is located in the lower levels of the network stack. This indicates that the packet is almost fully processed, and thus, adding an extension header at this juncture requires creating space for the header followed by inserting the data and padding. This task utilizes eBPF helper functions specific to packet manipulation with skb, such as bpf_skb_adjust_room for creating space, bpf_skb_load_bytes for loading data from skb, and bpf_skb_store_bytes for storing bytes in the adjusted skb.<a href="#section-3.2-1" class="pilcrow">¶</a></p>
+<p id="section-3.2-2">The tc bpf hookpoint caters to both ingress and egress traffic, vital in scenarios where measurements in ingress are needed or when packet data in ingress is used for calculating extension headers in egress. Adding an extension header after the packet is fully formed can result in the packet exceeding the Maximum Transmission Unit (MTU), leading to potential packet drops. It's important to check the packet size to ensure it doesn't exceed the MTU with the added extension header.<a href="#section-3.2-2" class="pilcrow">¶</a></p>
+<p id="section-3.2-3">TC-BPF programs can also utilize the bpf_redirect helper to redirect packets to the ingress or egress TC hook points of any interface in the host, useful for routing purposes. An additional benefit of using TC or any other eBPF hook point is the simplicity in exporting data received in extension headers for logging and monitoring. This is facilitated through eBPF maps, accessible from both kernel and user space. BPF maps like BPF_MAP_TYPE_PERF_EVENT_ARRAY and BPF_MAP_TYPE_RINGBUF are used for streaming real-time data from the extension headers, providing precise control over poll/epoll notifications to userspace about new data in the buffers.<a href="#section-3.2-3" class="pilcrow">¶</a></p>
+<div id="ingress-tc-bpf-program">
+<section id="section-3.2.1">
+          <h4 id="name-ingress-tc-bpf-program">
+<a href="#section-3.2.1" class="section-number selfRef">3.2.1. </a><a href="#name-ingress-tc-bpf-program" class="section-name selfRef">Ingress tc-bpf program</a>
+          </h4>
+<p id="section-3.2.1-1">A BPF program can be attached to the ingress of the clsact qdisc for a specific network interface. This program executes for every packet received on this interface. The purpose of attaching a BPF program at the ingress is to conduct specific measurements necessary for calculating certain fields in the extension header. Should the need arise to categorize information from incoming packets based on the 5-tuple, a hashmap BPF map can be employed. The ability to access BPF maps across different eBPF programs is beneficial, particularly for utilizing data recorded in the ingress BPF program within the egress BPF program.<a href="#section-3.2.1-1" class="pilcrow">¶</a></p>
+<p id="section-3.2.1-2">It's feasible to define actions at ingress based on data from incoming packets. This capability stems from the traffic control classifier-action subsystem, which examines incoming packet data and/or metadata, employing a combination of classifier filters and action executions to fulfill a specified policy. For instance, the ingress BPF program might decide to drop a packet based on its received extension header, returning TC_ACT_SHOT, or to forward the packet by returning TC_ACT_OK. Additional actions in the classifier-action subsystem, like TC_ACT_REDIRECT, are available for use with bpf_redirect and other relevant functions.<a href="#section-3.2.1-2" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="egress-tc-bpf-program">
+<section id="section-3.2.2">
+          <h4 id="name-egress-tc-bpf-program">
+<a href="#section-3.2.2" class="section-number selfRef">3.2.2. </a><a href="#name-egress-tc-bpf-program" class="section-name selfRef">Egress tc-bpf program</a>
+          </h4>
+<p id="section-3.2.2-1">A BPF program is attachable to the egress point of the clsact qdisc designated for a specific network interface, functioning for every packet exiting this interface. The role of this egress BPF program encompasses preparing space for the extension header in the skb, assembling the extension header tailored for the particular outbound packet, and appending the extension header to the packet. In cases where the extension header is stateless, an egress BPF program alone is adequate, as no flow-related measurements are required. The data to be integrated into the extension header solely depends on the current outgoing packet. Conversely, if the extension header fields are influenced by data from incoming packets or previously sent packets, utilizing BPF maps becomes necessary to store and subsequently utilize this data for computing specific fields in the extension headers.<a href="#section-3.2.2-1" class="pilcrow">¶</a></p>
+<p id="section-3.2.2-2">The egress BPF program also has access to a similar set of actions. For instance, if a packet is discovered to be malformed, the program has the capacity to drop the packet using TC_ACT_SHOT before it is transmitted. Conversely, successful addition of the extension header necessitates the return of TC_ACT_OK, propelling the packet to the subsequent phase in the network stack.<a href="#section-3.2.2-2" class="pilcrow">¶</a></p>
+<p id="section-3.2.2-3">The additional advantage of using TC or any other eBPF hook point is that if the data received in the extension headers were of interest in terms of logging and monitoring, the exporting of this data is made really simple through the use of eBPF maps which are accessible from both kernel space and user space. BPF maps of types BPF_MAP_TYPE_PERF_EVENT_ARRAY and BPF_MAP_TYPE_RINGBUF can be used for streaming of the real time data obtained from the extension headers. They give fine grain control to the eBPF program for poll/epoll notifications to any userspace consumer about new data availability in the buffers.<a href="#section-3.2.2-3" class="pilcrow">¶</a></p>
+</section>
+</div>
+</section>
+</div>
+</section>
+</div>
+<div id="implementation-of-pdm-extension-header-in-tc-bpf">
+<section id="section-4">
+      <h2 id="name-implementation-of-pdm-exten">
+<a href="#section-4" class="section-number selfRef">4. </a><a href="#name-implementation-of-pdm-exten" class="section-name selfRef">Implementation of PDM extension header in tc-bpf</a>
+      </h2>
+<p id="section-4-1">PDM is implemented using both ingress and egress TC-BPF programs. The ingress program's chief responsibility lies in the interpretation of incoming packets adorned with the PDM extension header and recording the reception time of these packets. Conversely, the egress program assumes the role of appending the extension header, leveraging the ingress timestamp to compute the elapsed time since the last packet was received and sent within the same flow. These timestamps are effectively communicated and preserved between the two programs via a BPF map, specifically of the BPF_MAP_TYPE_HASH variety. The mapping key is constituted by the 5-tuple flow, which includes ipv6 source and destination addresses, TCP/UDP source and destination ports, and the Transport layer protocol. In scenarios involving ICMP packets, the source and destination ports are assigned a value of zero.<a href="#section-4-1" class="pilcrow">¶</a></p>
+<div id="egress-tc-bpf-program-for-pdm">
+<section id="section-4.1">
+        <h3 id="name-egress-tc-bpf-program-for-p">
+<a href="#section-4.1" class="section-number selfRef">4.1. </a><a href="#name-egress-tc-bpf-program-for-p" class="section-name selfRef">Egress TC-BPF program for PDM</a>
+        </h3>
+<p id="section-4.1-1">The egress eBPF program initiates its process by conducting essential validations on the sizes of the ethernet and IP headers, and ascertains whether the packet in question is IPv6. Should the packet be non-IPv6, it proceeds unaltered. The program subsequently examines if the packet's next header field indicates the presence of an extension header. In instances where any form of extension header exists, the addition of PDM is withheld. This restraint stems from the complexity involved in integrating an extension header, requiring the parsing of existing ones and accurately positioning the PDM. The challenge is compounded by the limitation of bpf_skb_adjust_room, which permits augmenting the packet size only subsequent to the fixed-length IPv6 header, thus necessitating a reorganization of the other extension headers within the eBPF program.<a href="#section-4.1-1" class="pilcrow">¶</a></p>
+<p id="section-4.1-2">Furthermore, the egress eBPF program extracts the IPv6 source and destination addresses, and in cases involving TCP/UDP, it also parses the source and destination ports from the transport layer. This data culminates in the formulation of a 5-tuple key utilized for accessing the eBPF Map. The program retrieves timestamps marking the receipt and dispatch of the last packet and the packet sequence number of last packet sent and last packet received from the eBPF map. The extension header fields are then computed using the current timestamp, acquired through bpf_ktime_get_ns. This current timestamp is then stored back in the eBPF map under the packet last sent field, for future reference. The Delta Time Last Received (DTLR) field is calculated by determining the difference between the Time Last Sent and Time Last Received of the latest entry. The Delta Time Last Sent (DTLS) is computed as the difference between the Time Last Received of the latest entry and the Time Last Sent of the preceding entry. The Packet Sequence Number This Packet (PSNTP) is calculated by incrementing the sequence number of the last sent packet. The Packet Sequence Number Last Received (PSNLR) is taken directly from the map. This methodology is in accordance with Section 3.2.1 of RFC 8250.<a href="#section-4.1-2" class="pilcrow">¶</a></p>
+<p id="section-4.1-3">Given that PDM is categorized as a destination options extension header, the next header is set accordingly. The space requirement for storing PDM stands at 14 bytes, with an additional 2 bytes for the destination options header. Following the execution of bpf_skb_adjust_room to augment the skb size by 16 bytes, the program employs bpf_skb_store_bytes to record the structured destination options header and the PDM header. Upon successful insertion of the header, the egress BPF program concludes its operation by returning TC_ACT_OK.<a href="#section-4.1-3" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="ingress-tc-bpf-program-for-pdm">
+<section id="section-4.2">
+        <h3 id="name-ingress-tc-bpf-program-for-">
+<a href="#section-4.2" class="section-number selfRef">4.2. </a><a href="#name-ingress-tc-bpf-program-for-" class="section-name selfRef">Ingress TC-BPF program for PDM</a>
+        </h3>
+<p id="section-4.2-1">The calculation of the fields "Delta Time Last Sent" and "Delta Time Last Received," along with their respective scaling factors, is contingent on the "Time Last Received" field located in the BPF map, pertaining to the relevant 5-tuple. The ingress BPF program is responsible for capturing the timestamp when a packet, corresponding to a specific 5-tuple, is received. This capture is executed using the function bpf_ktime_get_ns, and the result is subsequently stored in the map. In the context of outgoing packets during egress, the "Packet Sequence Number Last Received" is derived from the "Packet Sequence Number This Packet" field located in the PDM header of the received packet. After the successful storage of both these values in the BPF map, the ingress BPF program concludes its operation by returning TC_ACT_OK.<a href="#section-4.2-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="implementation-of-pdm-initiation">
+<section id="section-4.3">
+        <h3 id="name-implementation-of-pdm-initi">
+<a href="#section-4.3" class="section-number selfRef">4.3. </a><a href="#name-implementation-of-pdm-initi" class="section-name selfRef">Implementation of PDM initiation</a>
+        </h3>
+<p id="section-4.3-1">The process of initiating Performance and Diagnostic Metrics (PDM) in the context of IPv6 involves verifying the existence of an entry for the corresponding 5-tuple within the BPF map. If no such entry exists, the protocol necessitates the creation of a new one. This action is prompted each time an IPv6 packet is either received or transmitted. The structure of the entries in the BPF map consists of the 5-tuple serving as the key and the value encompassing various elements such as the Packet Sequence Number Last Sent (PSNLS), Packet Sequence Number Last Received (PSNLR), Time Last Received (TLR), and Time Last Sent (TLS). During the initial phase, the Packet Sequence Number Last Sent (PSNLS) is assigned a random value, achieved through the use of the helper function bpf_get_prandom_u32, which generates a random 32-bit integer. Additionally, for the first packet, the Packet Sequence Number Last Received (PSNLR) and Time Last Received (TLR) are set to zero, as the ingress BPF program has not yet been executed for the specific 5-tuple.<a href="#section-4.3-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="implementation-of-pdm-termination">
+<section id="section-4.4">
+        <h3 id="name-implementation-of-pdm-termi">
+<a href="#section-4.4" class="section-number selfRef">4.4. </a><a href="#name-implementation-of-pdm-termi" class="section-name selfRef">Implementation of PDM termination</a>
+        </h3>
+<p id="section-4.4-1">Stale entries corresponding to a flow are to be removed after a certain amount of time, as new flows with the same 5-tuple can use the data stored for the same 5-tuple a long time ago. This should be done through a configurable maximum lifetime limit for the entries.<a href="#section-4.4-1" class="pilcrow">¶</a></p>
+<p id="section-4.4-2">One way to remove stale entries is through constant polling of the map to check for entries that have not been updated for the configured period, which identifies the entries as stale entries. This can be done using userspace programs as BPF maps are accessible from both the kernel space and user space. All the entries in the map are checked, and stale entries are removed using the bpf_map_delete_elem helper function.<a href="#section-4.4-2" class="pilcrow">¶</a></p>
+<p id="section-4.4-3">Another way is to handle this mechanism completely in eBPF by calculating the differences between Time Last Sent (TLS) and Time Last Received (TLR) with the current timestamp in both ingress and egress and if both these differences are above a configured maximum limit, then the map entry fields are reset and the PDM flow for that 5 tuple is reinitialized.<a href="#section-4.4-3" class="pilcrow">¶</a></p>
+</section>
+</div>
+</section>
+</div>
+<div id="advantages-of-using-ebpf-to-add-extension-headers">
+<section id="section-5">
+      <h2 id="name-advantages-of-using-ebpf-to">
+<a href="#section-5" class="section-number selfRef">5. </a><a href="#name-advantages-of-using-ebpf-to" class="section-name selfRef">Advantages of using eBPF to add extension headers</a>
+      </h2>
+<p id="section-5-1">eBPF offers the capability for dynamic loading and unloading of BPF programs, facilitating the ease of activating or deactivating the insertion of extension headers into outgoing packets. The utilization of tc and xdp hook points enhances the precision of timestamps for wire arrival time, due to their location at the lower layers of the network stack. Additionally, eBPF simplifies memory management in high traffic scenarios, as it allows for the configuration of the maximum number of entries in eBPF maps via its API. This feature extends to setting the maximum lifetime for these entries, enabling their systematic removal through userspace access to eBPF maps.<a href="#section-5-1" class="pilcrow">¶</a></p>
+<p id="section-5-2">In contrast, implementing extension header insertion within the kernel can introduce challenges, such as potential memory leaks due to inadequate memory deallocation processes. The configurability of the maximum number of entries in a BPF map addresses this issue, preventing memory overflow. The presence of the BPF verifier is instrumental in ensuring both security and simplicity of implementation. It conducts essential checks, including pointer validation, buffer overflow prevention, and loop avoidance in the code, thereby mitigating the risks of crashes or security vulnerabilities. To safeguard against misuse, eBPF imposes resource constraints on programs, such as limits on the number of executable instructions, thereby upholding system stability and integrity.<a href="#section-5-2" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="performance-analysis">
+<section id="section-6">
+      <h2 id="name-performance-analysis">
+<a href="#section-6" class="section-number selfRef">6. </a><a href="#name-performance-analysis" class="section-name selfRef">Performance Analysis</a>
+      </h2>
+<div id="experiment-setup">
+<section id="section-6.1">
+        <h3 id="name-experiment-setup">
+<a href="#section-6.1" class="section-number selfRef">6.1. </a><a href="#name-experiment-setup" class="section-name selfRef">Experiment Setup</a>
+        </h3>
+<p id="section-6.1-1">Two Virtual Machines with 8 cores, 16 GB of Ram and 64 GB of disk space were used to run the following tests. The Virtual Machines are running Ubuntu 22.04 server operating system running linux kernel of version 5.15.148 which was compiled using the same kernel configuration as the prepackaged kernel 5.15.94. Both the VMs are running on the same physical server using Qemu/KVM as hypervisor.<a href="#section-6.1-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="performance-metrics">
+<section id="section-6.2">
+        <h3 id="name-performance-metrics">
+<a href="#section-6.2" class="section-number selfRef">6.2. </a><a href="#name-performance-metrics" class="section-name selfRef">Performance Metrics</a>
+        </h3>
+<p id="section-6.2-1">+--------------------------------+------------+------------+-----------+<br>
+|
+ CPU Usage                                       | 
+Mean           
+| 
+Median       
+| 
+St. Dev.      
+|<br>
++--------------------------------+-------------------------------------+<br>
+| eBPF Egress CPU cycles                 
+| 
+8.60e10        | 8.54e10         
+| 
+9.08e9      
+|<br>
+| eBPF Ingress CPU cycles                
+| 
+1.53e10        
+| 
+1.57e10         
+| 
+8.71e9       
+|<br>
+| 
+PDM Kernel CPU cycles                
+|
+ 2.29e9         
+| 
+2.13e9          
+| 
+6.49e8      
+|<br>
++--------------------------------+------------+------------+-----------+<br>
+| 
+Network Throughput (Gbps)        
+| Mean           
+| Median         
+| St. Dev.      
+|<br>
++--------------------------------+-------------------------------------+<br>
+| Without PDM                                   
+| 
+18.80 Gbps 
+| 
+18.58 Gbps 
+| 
+2.19 Gbps  
+|<br>
+| 
+PDM Kernel Implementation        
+| 
+18.52 Gbps 
+| 
+18.33 Gbps 
+| 
+2.21 Gbps  
+|<br>
+| 
+eBPF Implementation                    
+| 
+18.03 Gbps 
+| 
+17.22 Gbps  
+| 
+2.51 Gbps  
+|<br>
++--------------------------------+------------+------------+-----------+<br>
+| 
+Packet Processing Latency (µs)    
+| 
+Mean          
+| 
+Median        
+| 
+St. Dev.    
+|<br>
++--------------------------------+------------+------------+-----------+<br>
+| 
+PDM Kernel Implementation        
+| 
+0.642 µs     
+| 
+0.640 µs      
+| 
+0.268 µs   
+|<br>
+| 
+eBPF Egress Program Attached    
+| 
+6.117 µs       
+| 
+6.263 µs      
+| 
+0.769 µs   
+|<br>
+| 
+eBPF Egress Program Detached   
+| 
+4.899 µs     
+| 
+4.938 µs      
+| 
+0.779 µs    
+|<br>
+| 
+eBPF Ingress Program Attached   
+| 
+5.790 µs     
+| 
+4.550 µs      
+| 
+3.156 µs    
+|<br>
+| 
+eBPF Ingress Program Detached  
+| 
+3.060 µs    
+| 
+3.310 µs       
+| 
+0.949 µs   
+|<br>
++----------------------------------------------------------------------+<br><a href="#section-6.2-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="cpu-performance">
+<section id="section-6.3">
+        <h3 id="name-cpu-performance">
+<a href="#section-6.3" class="section-number selfRef">6.3. </a><a href="#name-cpu-performance" class="section-name selfRef">CPU Performance</a>
+        </h3>
+<p id="section-6.3-1">Profiling of CPU cycles consumed by eBPF programs and the kernel implementation has been performed to evaluate the computational overhead introduced by these functions. The perf tool configured to sample CPU cycles at a fine-grained polling frequency of 10,000 Hz was used to capture CPU cycle events. Each experiment was structured to run an iperf3 server session for a duration of five minutes, simulating a consistent and controlled traffic load. This procedure was replicated across fifty individual trials to amass a robust data set. The repetition of these trials under uniform conditions allowed for the collection of a comprehensive profile of CPU cycle usage, which is critical for evaluating the efficiency and scalability of the eBPF processing within real-world networking scenarios.<a href="#section-6.3-1" class="pilcrow">¶</a></p>
+<p id="section-6.3-2">The egress function, which is responsible for inserting a constructed extension header into each packet, shows a mean CPU cycle count of approximately 8.6e10 CPU cycles, with a standard deviation of 9.07e9 CPU cycles, indicating a moderate dispersion around the mean. In contrast, the ingress function, tasked with timestamping and reading a field from incoming packets, has a significantly lower mean cycle count of around 1.5e10 CPU cycles and a higher relative variability, as reflected by its standard deviation of 8.71e9. The observed range for egress functions is about 4.24e10 cycles, which is substantially higher compared to the ingress function's range of 2.94e9 cycles. This suggests that egress processing is consistently more CPU-intensive than ingress operations, likely due to the additional complexity of header insertion.<a href="#section-6.3-2" class="pilcrow">¶</a></p>
+<p id="section-6.3-3">Egress overheads tend to converge around a mean of 0.41% of the total number of CPU cycles taken by iperf, displaying a relatively consistent consumption of CPU resources. Ingress overheads, maintaining a lower mean of 0.07%, suggest a minimal impact on CPU usage. Despite the lower averages, variations in overheads were observed, implying discrepancies in CPU loads across multiple executions. Such variability necessitates careful consideration in system design to ensure reliability and efficiency, especially under conditions of high network throughput. The correlation between the volume of data processed and the CPU cycles expended emphasizes the need for meticulous optimization of eBPF programs to prevent performance bottlenecks in traffic-dense environments.<a href="#section-6.3-3" class="pilcrow">¶</a></p>
+<p id="section-6.3-4">In the kernel implementation of the IPv6 Performance and Diagnostic Metrics (PDM), the construction and insertion of the extension header into the socket buffer (skb) is a sequential process where the pdm_insert function initiates the call to pdm_destopts_insert, which subsequently calls pdm_genopt to assemble the extension header. Profiling of the pdm_insert function revealed a mean CPU cycle overhead of approximately 2.28e9 CPU cycles, with a standard deviation of  6.49e8 CPU cycles indicative of the overhead variability in response to network traffic fluctuations. This function encapsulates the entire process of PDM header insertion and is reflective of the total overhead imparted to the kernel during this operation.<a href="#section-6.3-4" class="pilcrow">¶</a></p>
+<p id="section-6.3-5">eBPF programs demonstrate a considerable variance in computational intensity, with the egress function's overhead being markedly high at  8.60e10 CPU cycles. This is significantly greater than the mean overhead for the kernel's PDM insertion implementation, which stands at 2.29e9 for pdm_insert. The disparity indicates that while eBPF programs are powerful for network traffic manipulation and control, they also impose a non-trivial computational burden, especially for egress processing here. In contrast, the kernel's PDM processing, although not trivial, consumes less CPU cycles on average, highlighting the importance of optimizing both eBPF and kernel functions to balance functionality with system resource utilization.<a href="#section-6.3-5" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="memory-usage">
+<section id="section-6.4">
+        <h3 id="name-memory-usage">
+<a href="#section-6.4" class="section-number selfRef">6.4. </a><a href="#name-memory-usage" class="section-name selfRef">Memory Usage</a>
+        </h3>
+<p id="section-6.4-1">This PDM implementation using eBPF uses memory while storing the state of the 5 tuple flows. The memory management is handled by eBPF maps. Each map entry stores a value of size 20 bytes - 2 bytes each for Packet Sequence Number This Packet (PSNTP) and Packet Sequence Number Last Received (PSNLR) and 8 bytes each for Time Last Sent (TLS) and Time Last Received (TLR). The BPF maps have been configured to a maximum limit of 65,536 entries. This means the implementation can handle 65,536 flows at once. While handling the maximum of these flows we will expect the total data to be stored in the eBPF maps to be 1310720 Bytes. There is additional overhead added by the eBPF maps structures themselves but the effect on the total is minimal. If more than 65,536 flows are encountered then new flows replace older entries in the maps. The BPF_MAP_TYPE_LRU_HASH variant of the BPF Hash Map is used in the implementation so the older flows are replaced in a least recently used fashion.<a href="#section-6.4-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="network-throughput">
+<section id="section-6.5">
+        <h3 id="name-network-throughput">
+<a href="#section-6.5" class="section-number selfRef">6.5. </a><a href="#name-network-throughput" class="section-name selfRef">Network Throughput</a>
+        </h3>
+<p id="section-6.5-1">Profiling of Network Throughput consumed by attaching PDM extension header has been done to determine the throughput overhead. Each experiment was structured to run an iperf3 server session for a duration of five minutes, simulating a consistent and controlled traffic load. This procedure was replicated across fifty individual trials. The repetition of these trials were conducted under uniform conditions. The network throughput was measured for the case when PDM is not attached, when PDM is attached using the kernel implementation and when PDM is attached using the eBPF implementation.<a href="#section-6.5-1" class="pilcrow">¶</a></p>
+<p id="section-6.5-2">When PDM is not attached, the network throughput averages around 18.80 Gbps. However, with the kernel implementation of PDM, a slight decrease is observed, averaging at 18.52 Gbps. The eBPF implementation further reduces the throughput to an average of 18.03 Gbps. This indicates that while both methods impact network performance, the eBPF implementation has a more pronounced effect. The standard deviation across these measurements suggests variability in network conditions or implementation efficiency. These findings highlight the importance of considering network throughput implications when implementing PDM using different methods, especially in high-throughput environments.<a href="#section-6.5-2" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="packet-processing-latency">
+<section id="section-6.6">
+        <h3 id="name-packet-processing-latency">
+<a href="#section-6.6" class="section-number selfRef">6.6. </a><a href="#name-packet-processing-latency" class="section-name selfRef">Packet Processing Latency</a>
+        </h3>
+<p id="section-6.6-1">Functions within the kernel involved in packet processing can be profiled using ftrace to determine the exact duration taken in processing packets. The PDM insertion function (which is a part of the PDM Kernel Implementation) call duration was measured for a duration of 5 minutes while running an iperf3 server session. For egress eBPF program, the duration of dev_queue_xmit() function call in the kernel was measured with and without the eBPF egress program attached for a duration of 5 minutes while running an iperf3 server session. Similarly, for the ingress eBPF program, the duration of netif_receive_skb_list_internal() function call in the kernel was measured with and without the eBPF ingress program attached for a duration of 5 minutes while running an iperf3 server session..<a href="#section-6.6-1" class="pilcrow">¶</a></p>
+<p id="section-6.6-2">The PDM insertion function call duration, measured in microseconds, exhibits a mean of approximately 0.642, with a standard deviation indicating a tight clustering of results around this mean. This level of precision in time measurement reflects the efficiency of the kernel's processing capabilities.<a href="#section-6.6-2" class="pilcrow">¶</a></p>
+<p id="section-6.6-3">The profiling of eBPF egress program with respect to packet processing latency is done by calculating the difference in the duration of dev_queue_xmit() function call in the kernel with and without the eBPF egress program attached. The mean duration of the function call with the eBPF egress program attached is approximately 6.117 µs, with a standard deviation of 0.769 µs. The mean duration of the function call with the eBPF egress program detached is approximately 4.899 µs, with a standard deviation of 0.779 µs. This indicates that the eBPF egress program introduces a latency of approximately 1.218 µs.<a href="#section-6.6-3" class="pilcrow">¶</a></p>
+<p id="section-6.6-4">The profiling of eBPF ingress program with respect to packet processing latency is done by calculating the difference in the duration of netif_receive_skb_list_internal() function call in the kernel with and without the eBPF ingress program attached. The mean duration of the function call with the eBPF ingress program attached is approximately 5.790 µs, with a standard deviation of 3.156 µs. The mean duration of the function call with the eBPF ingress program detached is approximately 3.060 µs, with a standard deviation of 0.949 µs. This indicates that the eBPF ingress program introduces a latency of approximately 2.730 µs.<a href="#section-6.6-4" class="pilcrow">¶</a></p>
+<p id="section-6.6-5">The comparison between kernel-based PDM insertion and eBPF program profiling indicates distinct latencies in packet processing. The kernel approach demonstrates high efficiency with minimal processing time, whereas the eBPF egress and ingress programs introduce noticeable additional latencies. This implies that while eBPF provides flexibility and programmability, it comes at the cost of increased processing time. Consequently, in environments where low latency is crucial, the kernel-based approach might be preferable, whereas eBPF could be more suitable for scenarios where programmability and complex packet processing are prioritized.<a href="#section-6.6-5" class="pilcrow">¶</a></p>
+</section>
+</div>
+</section>
+</div>
+<div id="security-considerations">
+<section id="section-7">
+      <h2 id="name-security-considerations">
+<a href="#section-7" class="section-number selfRef">7. </a><a href="#name-security-considerations" class="section-name selfRef">Security Considerations</a>
+      </h2>
+<p id="section-7-1">BPF utilizes maps to store various data elements, including 5-tuple information about network flows. These maps have a configurable limit on the number of entries they can hold, which is crucial for efficient memory usage and performance optimization. However, this characteristic also opens up a potential vulnerability to resource exhaustion attacks.
+An attacker, by intentionally sending packets with numerous distinct 5-tuples, could overrun the BPF maps. As these maps reach their maximum capacity, legitimate new entries cannot be added, or lead to existing entries being replaced by the new flows, potentially leading to incorrect packet processing or denial of service as critical flows might be untracked or misclassified. This scenario is particularly concerning in high-throughput environments where the rate of new flow creation is significant.
+To mitigate such attacks, it is essential to implement a robust mechanism that not only monitors the usage of BPF maps but also employs intelligent strategies to handle map overruns. This could include techniques like early eviction of least-recently-used entries, dynamic resizing of maps based on traffic patterns, or even alert mechanisms for anomalous growth in map entries.
+Additionally, rate-limiting strategies could be enforced at the network edge to prevent an overwhelming number of new flows from entering the network, thus offering a first line of defense against such resource exhaustion attacks.<a href="#section-7-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="iana-considerations">
+<section id="section-8">
+      <h2 id="name-iana-considerations">
+<a href="#section-8" class="section-number selfRef">8. </a><a href="#name-iana-considerations" class="section-name selfRef">IANA Considerations</a>
+      </h2>
+<p id="section-8-1">This document has no IANA actions.<a href="#section-8-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="sec-normative-references">
+<section id="section-9">
+      <h2 id="name-normative-references">
+<a href="#section-9" class="section-number selfRef">9. </a><a href="#name-normative-references" class="section-name selfRef">Normative References</a>
+      </h2>
+<dl class="references">
+<dt id="RFC2119">[RFC2119]</dt>
+      <dd>
+<span class="refAuthor">Bradner, S.</span>, <span class="refTitle">"Key words for use in RFCs to Indicate Requirement Levels"</span>, <span class="seriesInfo">BCP 14</span>, <span class="seriesInfo">RFC 2119</span>, <span class="seriesInfo">DOI 10.17487/RFC2119</span>, <time datetime="1997-03" class="refDate">March 1997</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc2119">https://www.rfc-editor.org/rfc/rfc2119</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC8174">[RFC8174]</dt>
+    <dd>
+<span class="refAuthor">Leiba, B.</span>, <span class="refTitle">"Ambiguity of Uppercase vs Lowercase in RFC 2119 Key Words"</span>, <span class="seriesInfo">BCP 14</span>, <span class="seriesInfo">RFC 8174</span>, <span class="seriesInfo">DOI 10.17487/RFC8174</span>, <time datetime="2017-05" class="refDate">May 2017</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc8174">https://www.rfc-editor.org/rfc/rfc8174</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+</dl>
+</section>
+</div>
+<div id="acknowledgments">
+<section id="appendix-A">
+      <h2 id="name-acknowledgments">
+<a href="#name-acknowledgments" class="section-name selfRef">Acknowledgments</a>
+      </h2>
+<p id="appendix-A-1">TODO acknowledge.<a href="#appendix-A-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="authors-addresses">
+<section id="appendix-B">
+      <h2 id="name-authors-address">
+<a href="#name-authors-address" class="section-name selfRef">Author's Address</a>
+      </h2>
+<address class="vcard">
+        <div dir="auto" class="left"><span class="fn nameRole">Chinmay</span></div>
+<div dir="auto" class="left"><span class="org">NITK Surathkal</span></div>
+<div class="email">
+<span>Email:</span>
+<a href="mailto:chinmaysharma1020@gmail.com" class="email">chinmaysharma1020@gmail.com</a>
+</div>
+</address>
+</section>
+</div>
+<script>const toc = document.getElementById("toc");
+toc.querySelector("h2").addEventListener("click", e => {
+  toc.classList.toggle("active");
+});
+toc.querySelector("nav").addEventListener("click", e => {
+  toc.classList.remove("active");
+});
+</script>
+</body>
+</html>
