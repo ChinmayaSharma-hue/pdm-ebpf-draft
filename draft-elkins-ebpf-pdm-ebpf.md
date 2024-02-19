@@ -1,5 +1,5 @@
 ---
-title: "Performance Evaluation of PDM Implementation using eBPF in TC versus Traditional Kernel Methods"
+title: "Implementation and Performance Evaluation of PDM using eBPF"
 abbrev: "pdm-ebpf"
 category: info
 
