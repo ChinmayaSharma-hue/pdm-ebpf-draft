@@ -11,9 +11,9 @@
        RFC8250 describes an optional Destination Option (DO) header embedded in each packet to provide sequence numbers and timing information as a basis for measurements. As kernel implementation can be complex and time-consuming, this document describes the implementation of the Performance and Diagnostic Metrics (PDM) extension header using eBPF in the Linux kernel's Traffic Control (TC) subsystem. The document also provides a performance analysis of the eBPF implementation in comparison to the traditional kernel implementation. 
     " name="description">
 <meta content="xml2rfc 3.19.4" name="generator">
-<meta content="next generation" name="keyword">
-<meta content="unicorn" name="keyword">
-<meta content="sparkling distributed ledger" name="keyword">
+<meta content="pdm" name="keyword">
+<meta content="ebpf" name="keyword">
+<meta content="performance" name="keyword">
 <meta content="draft-elkins-ebpf-pdm-ebpf-latest" name="ietf.draft">
 <!-- Generator version information:
   xml2rfc 3.19.4
@@ -1204,12 +1204,6 @@ svg :is([fill="white"], [fill^="#fff"]) {
                   <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.6.2.3.2.2">
                     <p id="section-toc.1-1.6.2.3.2.2.1"><a href="#section-6.3.2" class="auto internal xref">6.3.2</a>.  <a href="#name-cpu-usage-as-a-percentage-o" class="internal xref">CPU usage as a percentage of total CPU cycles</a></p>
 </li>
-                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.6.2.3.2.3">
-                    <p id="section-toc.1-1.6.2.3.2.3.1"><a href="#section-6.3.3" class="auto internal xref">6.3.3</a>.  <a href="#name-pdm-ebpf-implementation" class="internal xref">PDM eBPF Implementation</a></p>
-</li>
-                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.6.2.3.2.4">
-                    <p id="section-toc.1-1.6.2.3.2.4.1"><a href="#section-6.3.4" class="auto internal xref">6.3.4</a>.  <a href="#name-pdm-kernel-implementation" class="internal xref">PDM Kernel Implementation</a></p>
-</li>
                 </ul>
 </li>
               <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.6.2.4">
@@ -1419,8 +1413,11 @@ appear in all capitals, as shown here.<a href="#section-2-1" class="pilcrow">¶<
         <h3 id="name-cpu-performance">
 <a href="#section-6.3" class="section-number selfRef">6.3. </a><a href="#name-cpu-performance" class="section-name selfRef">CPU Performance</a>
         </h3>
-<p id="section-6.3-1">Profiling of CPU cycles consumed by eBPF programs and the kernel implementation has been performed to evaluate the computational overhead introduced by these functions. The perf tool configured to sample CPU cycles at a polling frequency of 10,000 Hz to capture CPU cycle events. Each experiment was structured to run an iperf3 server session for a duration of five minutes, simulating a consistent and controlled traffic load. This procedure was replicated across fifty individual trials. The repetition of these trials under uniform conditions allowed for the collection of a comprehensive profile of CPU cycle usage, which is critical for evaluating the efficiency and scalability of the eBPF processing within real-world networking scenarios. For the eBPF program, Perf is able to record data for egress and ingress programs separately. For the
-kernel implementation, the pdm_insert function call duration was measured for a duration of 5 minutes while running an iperf3 server session.<a href="#section-6.3-1" class="pilcrow">¶</a></p>
+<p id="section-6.3-1">Profiling of CPU cycles consumed by eBPF programs and the kernel implementation has been performed to evaluate the computational overhead introduced by these functions. The perf tool was used to capture CPU cycle events and configured with a polling frequency of 10,000 Hz.<a href="#section-6.3-1" class="pilcrow">¶</a></p>
+<p id="section-6.3-2">Each experiment was structured to run an iperf3 server session using TCP for a duration of 600 seconds or five minutes, simulating a consistent and controlled traffic load. Iperf was also configured to use an MSS value of 1000 bytes across all tests while the MTU of the interface and path was 1500 bytes. This allowed us to avoid accounting for packet size becoming greater than the MTU in the eBPF program.<a href="#section-6.3-2" class="pilcrow">¶</a></p>
+<p id="section-6.3-3">This procedure was replicated across fifty individual trials per implementation. The repetition of these trials under uniform conditions and for a long duration allowed for the collection of a comprehensive profile of CPU cycle usage, which is useful for evaluating the efficiency and scalability of the eBPF processing in real-world networking scenarios.<a href="#section-6.3-3" class="pilcrow">¶</a></p>
+<p id="section-6.3-4">For the eBPF program, perf is able to record data for egress and ingress programs separately. For the
+kernel implementation, the pdm_insert function call duration was measured for each iperf3 server session. This represents the overhead in egress in the kernel implementation.<a href="#section-6.3-4" class="pilcrow">¶</a></p>
 <div id="cpu-usage-in-cycles">
 <section id="section-6.3.1">
           <h4 id="name-cpu-usage-in-cycles">
@@ -1450,7 +1447,7 @@ kernel implementation, the pdm_insert function call duration was measured for a 
                 <td class="text-left" rowspan="1" colspan="1">8.71e9 cyc.</td>
               </tr>
               <tr>
-                <td class="text-left" rowspan="1" colspan="1">PDM Kernel</td>
+                <td class="text-left" rowspan="1" colspan="1">PDM Kernel Egress</td>
                 <td class="text-left" rowspan="1" colspan="1">2.29e9 cyc.</td>
                 <td class="text-left" rowspan="1" colspan="1">2.13e9 cyc.</td>
                 <td class="text-left" rowspan="1" colspan="1">6.49e8 cyc.</td>
@@ -1463,25 +1460,42 @@ kernel implementation, the pdm_insert function call duration was measured for a 
 <section id="section-6.3.2">
           <h4 id="name-cpu-usage-as-a-percentage-o">
 <a href="#section-6.3.2" class="section-number selfRef">6.3.2. </a><a href="#name-cpu-usage-as-a-percentage-o" class="section-name selfRef">CPU usage as a percentage of total CPU cycles</a>
-        </h4>
-</section>
-</div>
-<div id="pdm-ebpf-implementation">
-<section id="section-6.3.3">
-          <h4 id="name-pdm-ebpf-implementation">
-<a href="#section-6.3.3" class="section-number selfRef">6.3.3. </a><a href="#name-pdm-ebpf-implementation" class="section-name selfRef">PDM eBPF Implementation</a>
           </h4>
-<p id="section-6.3.3-1">The egress function, which is responsible for inserting a constructed extension header into each packet, shows a mean CPU cycle count of approximately 8.6e10 CPU cycles, with a standard deviation of 9.08e9 CPU cycles, indicating a moderate dispersion around the mean. In contrast, the ingress function, tasked with timestamping and reading a field from incoming packets, has a significantly lower mean cycle count of around 1.5e10 CPU cycles and a higher relative variability, as reflected by its standard deviation of 8.71e9. The observed range for egress functions is about 4.24e10 cycles, which is substantially higher compared to the ingress function's range of 2.94e9 cycles. This suggests that egress processing is consistently more CPU-intensive than ingress operations, likely due to the additional complexity of header insertion.<a href="#section-6.3.3-1" class="pilcrow">¶</a></p>
-<p id="section-6.3.3-2">Egress overheads tend to converge around a mean of 0.41% of the total number of CPU cycles taken by iperf, displaying a relatively consistent consumption of CPU resources. Ingress overheads, maintaining a lower mean of 0.07%, suggest a minimal impact on CPU usage. Despite the lower averages, variations in overheads were observed, implying discrepancies in CPU loads across multiple executions. Such variability necessitates careful consideration in system design to ensure reliability and efficiency, especially under conditions of high network throughput.<a href="#section-6.3.3-2" class="pilcrow">¶</a></p>
-</section>
-</div>
-<div id="pdm-kernel-implementation">
-<section id="section-6.3.4">
-          <h4 id="name-pdm-kernel-implementation">
-<a href="#section-6.3.4" class="section-number selfRef">6.3.4. </a><a href="#name-pdm-kernel-implementation" class="section-name selfRef">PDM Kernel Implementation</a>
-          </h4>
-<p id="section-6.3.4-1">In the kernel implementation of the IPv6 Performance and Diagnostic Metrics (PDM), the construction and insertion of the extension header into the socket buffer (skb) is a sequential process where the pdm_insert function initiates the call to pdm_destopts_insert, which subsequently calls pdm_genopt to assemble the extension header. Profiling of the pdm_insert function revealed a mean CPU cycle overhead of approximately 2.28e9 CPU cycles, with a standard deviation of  6.49e8 CPU cycles indicative of the overhead variability in response to network traffic fluctuations. This function encapsulates the entire process of PDM header insertion and is reflective of the total overhead imparted to the kernel during this operation.<a href="#section-6.3.4-1" class="pilcrow">¶</a></p>
-<p id="section-6.3.4-2">eBPF programs demonstrate a considerable variance in computational intensity, with the egress function's overhead being markedly high at  8.60e10 CPU cycles. This is significantly greater than the mean overhead for the kernel's PDM insertion implementation, which stands at 2.29e9 for pdm_insert. The disparity indicates that while eBPF programs are powerful for network traffic manipulation and control, they also impose a non-trivial computational burden, especially for egress processing here. In contrast, the kernel's PDM processing, although not trivial, consumes less CPU cycles on average, highlighting the importance of optimizing both eBPF and kernel functions to balance functionality with system resource utilization.<a href="#section-6.3.4-2" class="pilcrow">¶</a></p>
+<table class="center" id="table-2">
+            <caption><a href="#table-2" class="selfRef">Table 2</a></caption>
+<thead>
+              <tr>
+                <th class="text-left" rowspan="1" colspan="1">CPU Usage(%)</th>
+                <th class="text-left" rowspan="1" colspan="1">Mean</th>
+                <th class="text-left" rowspan="1" colspan="1">Median</th>
+                <th class="text-left" rowspan="1" colspan="1">St. Dev.</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="text-left" rowspan="1" colspan="1">eBPF Egress</td>
+                <td class="text-left" rowspan="1" colspan="1">0.41%</td>
+                <td class="text-left" rowspan="1" colspan="1">0.40%</td>
+                <td class="text-left" rowspan="1" colspan="1">0.10%</td>
+              </tr>
+              <tr>
+                <td class="text-left" rowspan="1" colspan="1">eBPF Egress</td>
+                <td class="text-left" rowspan="1" colspan="1">0.07%</td>
+                <td class="text-left" rowspan="1" colspan="1">0.07%</td>
+                <td class="text-left" rowspan="1" colspan="1">0.03%</td>
+              </tr>
+              <tr>
+                <td class="text-left" rowspan="1" colspan="1">PDM Kernel Egress</td>
+                <td class="text-left" rowspan="1" colspan="1">0.0110%</td>
+                <td class="text-left" rowspan="1" colspan="1">0.0100%</td>
+                <td class="text-left" rowspan="1" colspan="1">0.0030%</td>
+              </tr>
+            </tbody>
+          </table>
+<p id="section-6.3.2-2">The CPU cycles consumed by the PDM Kernel Implementation is lower than the eBPF counterpart. This denotes a measurably higher computational demand for eBPF operations. However, it's noteworthy that the kernel approach, despite its limited flexibility compared to eBPF, demonstrates a lower overhead, signifying its streamlined efficiency.<a href="#section-6.3.2-2" class="pilcrow">¶</a></p>
+<p id="section-6.3.2-3">On a test run with call stack enabled in perf, the percentage overheads of some of the symbols invoked by
+eBPF egress function were obtained. The major portion of egress overhead is bpf map read/write operations, and memcpy operation for the copy of packet data to and from kernel memory.<a href="#section-6.3.2-3" class="pilcrow">¶</a></p>
+<p id="section-6.3.2-4">It would be interesting to examine the effect of lowering the number of bpf_skb_store_bytes and bpf_skb_load_bytes by loading the entire packet into the eBPF program, modifying the packet in the eBPF program and then storing the modified packet into skb. The current implementation invokes bpf_skb_store_bytes and bpf_skb_load_bytes many times for disjoint parts of the packet. This could be a potential optimization for the eBPF program.<a href="#section-6.3.2-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 </section>
@@ -1491,7 +1505,9 @@ kernel implementation, the pdm_insert function call duration was measured for a 
         <h3 id="name-memory-usage">
 <a href="#section-6.4" class="section-number selfRef">6.4. </a><a href="#name-memory-usage" class="section-name selfRef">Memory Usage</a>
         </h3>
-<p id="section-6.4-1">This PDM implementation using eBPF uses memory while storing the state of the 5 tuple flows. The memory management is handled by eBPF maps. Each map entry stores a value of size 20 bytes - 2 bytes each for Packet Sequence Number This Packet (PSNTP) and Packet Sequence Number Last Received (PSNLR) and 8 bytes each for Time Last Sent (TLS) and Time Last Received (TLR). The BPF maps have been configured to a maximum limit of 65,536 entries. This means the implementation can handle 65,536 flows at once. While handling the maximum of these flows we will expect the total data to be stored in the eBPF maps to be 1310720 Bytes. There is additional overhead added by the eBPF maps structures themselves but the effect on the total is minimal. If more than 65,536 flows are encountered then new flows replace older entries in the maps. The BPF_MAP_TYPE_LRU_HASH variant of the BPF Hash Map is used in the implementation so the older flows are replaced in a least recently used fashion.<a href="#section-6.4-1" class="pilcrow">¶</a></p>
+<p id="section-6.4-1">This PDM implementation using eBPF uses memory while storing the state of the 5 tuple flows. The memory management is handled by eBPF maps. Each map entry stores a value of size 20 bytes - 2 bytes each for Packet Sequence Number This Packet (PSNTP) and Packet Sequence Number Last Received (PSNLR) and 8 bytes each for Time Last Sent (TLS) and Time Last Received (TLR).<a href="#section-6.4-1" class="pilcrow">¶</a></p>
+<p id="section-6.4-2">The BPF maps have been configured to a maximum limit of 65,536 entries. This means the implementation can handle 65,536 flows at once. While handling the maximum of these flows we will expect the total data to be stored in the eBPF maps to be 1310720 Bytes or 1.3 MB. There is additional overhead added by the eBPF maps structures themselves but the effect on this total is not very large.<a href="#section-6.4-2" class="pilcrow">¶</a></p>
+<p id="section-6.4-3">If more than 65,536 flows are encountered then new flows replace older entries in the maps. The BPF_MAP_TYPE_LRU_HASH variant of the BPF Hash Map is used in the implementation so the older flows are replaced in a least recently used fashion.<a href="#section-6.4-3" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="network-throughput">
@@ -1499,8 +1515,8 @@ kernel implementation, the pdm_insert function call duration was measured for a 
         <h3 id="name-network-throughput">
 <a href="#section-6.5" class="section-number selfRef">6.5. </a><a href="#name-network-throughput" class="section-name selfRef">Network Throughput</a>
         </h3>
-<table class="center" id="table-2">
-          <caption><a href="#table-2" class="selfRef">Table 2</a></caption>
+<table class="center" id="table-3">
+          <caption><a href="#table-3" class="selfRef">Table 3</a></caption>
 <thead>
             <tr>
               <th class="text-left" rowspan="1" colspan="1">Network Throughput</th>
@@ -1530,8 +1546,41 @@ kernel implementation, the pdm_insert function call duration was measured for a 
             </tr>
           </tbody>
         </table>
-<p id="section-6.5-2">Profiling of Network Throughput consumed by attaching PDM extension header has been done to determine the throughput overhead. Each experiment was structured to run an iperf3 server session for a duration of five minutes, simulating a consistent and controlled traffic load. This procedure was replicated across fifty individual trials. The repetition of these trials were conducted under uniform conditions. The network throughput was measured for the case when PDM is not attached, when PDM is attached using the kernel implementation and when PDM is attached using the eBPF implementation.<a href="#section-6.5-2" class="pilcrow">¶</a></p>
-<p id="section-6.5-3">When PDM is not attached, the network throughput averages around 18.80 Gbps. However, with the kernel implementation of PDM, a slight decrease is observed, averaging at 18.52 Gbps. The eBPF implementation further reduces the throughput to an average of 18.03 Gbps. This indicates that while both methods impact network performance, the eBPF implementation has a more pronounced effect. The standard deviation across these measurements suggests variability in network conditions or implementation efficiency. These findings highlight the importance of considering network throughput implications when implementing PDM using different methods, especially in high-throughput environments.<a href="#section-6.5-3" class="pilcrow">¶</a></p>
+<p id="section-6.5-2">Profiling of Network Throughput consumed by attaching PDM extension header has been done to determine the throughput overhead. Each experiment was structured to run an iperf3 server session using TCP for a duration of 600 seconds or five minutes, simulating a consistent and controlled traffic load. There was no perf running in any of these tests.<a href="#section-6.5-2" class="pilcrow">¶</a></p>
+<p id="section-6.5-3">This procedure was replicated across twenty five individual trials. The repetition of these trials were conducted under uniform conditions. The network throughput was measured for the case when PDM is not attached, when PDM is attached using the kernel implementation and when PDM is attached using the eBPF implementation.<a href="#section-6.5-3" class="pilcrow">¶</a></p>
+<p id="section-6.5-4">When PDM is not attached, the network throughput is the highest as expected. A slight decrease is observed in the kernel implementation, with a further decrease in the eBPF implementation. This indicates that while both methods impact network performance, the eBPF implementation has a slightly more pronounced effect. The standard deviation across these measurements suggests some variability in the test network conditions. This might be a result to consider while implementing extension headers in eBPF.<a href="#section-6.5-4" class="pilcrow">¶</a></p>
+<table class="center" id="table-4">
+          <caption><a href="#table-4" class="selfRef">Table 4</a></caption>
+<thead>
+            <tr>
+              <th class="text-left" rowspan="1" colspan="1">TCP Retransmits</th>
+              <th class="text-left" rowspan="1" colspan="1">Mean</th>
+              <th class="text-left" rowspan="1" colspan="1">Median</th>
+              <th class="text-left" rowspan="1" colspan="1">St. Dev.</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">Without PDM</td>
+              <td class="text-left" rowspan="1" colspan="1">2.125</td>
+              <td class="text-left" rowspan="1" colspan="1">2.0</td>
+              <td class="text-left" rowspan="1" colspan="1">1.832</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">PDM Kernel Implementation</td>
+              <td class="text-left" rowspan="1" colspan="1">44.125</td>
+              <td class="text-left" rowspan="1" colspan="1">41.5</td>
+              <td class="text-left" rowspan="1" colspan="1">13.531</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">eBPF Implementation</td>
+              <td class="text-left" rowspan="1" colspan="1">37.565</td>
+              <td class="text-left" rowspan="1" colspan="1">36.0</td>
+              <td class="text-left" rowspan="1" colspan="1">10.133</td>
+            </tr>
+          </tbody>
+        </table>
+<p id="section-6.5-6">The TCP retransmits were extracted for the test runs conducted for network throughput. The number of TCP retransmits is higher when PDM is attached using the kernel implementation and the eBPF implementation. This might be due to a fault in the implementation itself or packet drops happening due to extension header addition.<a href="#section-6.5-6" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="packet-processing-latency">
@@ -1539,8 +1588,8 @@ kernel implementation, the pdm_insert function call duration was measured for a 
         <h3 id="name-packet-processing-latency">
 <a href="#section-6.6" class="section-number selfRef">6.6. </a><a href="#name-packet-processing-latency" class="section-name selfRef">Packet Processing Latency</a>
         </h3>
-<table class="center" id="table-3">
-          <caption><a href="#table-3" class="selfRef">Table 3</a></caption>
+<table class="center" id="table-5">
+          <caption><a href="#table-5" class="selfRef">Table 5</a></caption>
 <thead>
             <tr>
               <th class="text-left" rowspan="1" colspan="1">Packet Processing Latency</th>
@@ -1552,41 +1601,41 @@ kernel implementation, the pdm_insert function call duration was measured for a 
           <tbody>
             <tr>
               <td class="text-left" rowspan="1" colspan="1">PDM Kernel Implementation</td>
-              <td class="text-left" rowspan="1" colspan="1">0.642 µs</td>
-              <td class="text-left" rowspan="1" colspan="1">0.640 µs</td>
-              <td class="text-left" rowspan="1" colspan="1">0.268 µs</td>
+              <td class="text-left" rowspan="1" colspan="1">0.707 µs</td>
+              <td class="text-left" rowspan="1" colspan="1">0.641 µs</td>
+              <td class="text-left" rowspan="1" colspan="1">0.414 µs</td>
             </tr>
             <tr>
               <td class="text-left" rowspan="1" colspan="1">eBPF Egress Program Attached</td>
-              <td class="text-left" rowspan="1" colspan="1">6.117 µs</td>
-              <td class="text-left" rowspan="1" colspan="1">6.263 µs</td>
-              <td class="text-left" rowspan="1" colspan="1">0.769 µs</td>
+              <td class="text-left" rowspan="1" colspan="1">5.808 µs</td>
+              <td class="text-left" rowspan="1" colspan="1">6.142 µs</td>
+              <td class="text-left" rowspan="1" colspan="1">0.986 µs</td>
             </tr>
             <tr>
               <td class="text-left" rowspan="1" colspan="1">eBPF Egress Program Detached</td>
-              <td class="text-left" rowspan="1" colspan="1">4.899 µs</td>
-              <td class="text-left" rowspan="1" colspan="1">4.938 µs</td>
-              <td class="text-left" rowspan="1" colspan="1">0.779 µs</td>
+              <td class="text-left" rowspan="1" colspan="1">4.528 µs</td>
+              <td class="text-left" rowspan="1" colspan="1">4.668 µs</td>
+              <td class="text-left" rowspan="1" colspan="1">0.785 µs</td>
             </tr>
             <tr>
               <td class="text-left" rowspan="1" colspan="1">eBPF Ingress Program Attached</td>
-              <td class="text-left" rowspan="1" colspan="1">5.790 µs</td>
-              <td class="text-left" rowspan="1" colspan="1">4.550 µs</td>
-              <td class="text-left" rowspan="1" colspan="1">3.156 µs</td>
+              <td class="text-left" rowspan="1" colspan="1">3.634 µs</td>
+              <td class="text-left" rowspan="1" colspan="1">3.977 µs</td>
+              <td class="text-left" rowspan="1" colspan="1">0.906 µs</td>
             </tr>
             <tr>
               <td class="text-left" rowspan="1" colspan="1">eBPF Ingress Program Detached</td>
-              <td class="text-left" rowspan="1" colspan="1">3.060 µs</td>
-              <td class="text-left" rowspan="1" colspan="1">3.310 µs</td>
-              <td class="text-left" rowspan="1" colspan="1">0.949 µs</td>
+              <td class="text-left" rowspan="1" colspan="1">3.082 µs</td>
+              <td class="text-left" rowspan="1" colspan="1">3.321 µs</td>
+              <td class="text-left" rowspan="1" colspan="1">1.246 µs</td>
             </tr>
           </tbody>
         </table>
-<p id="section-6.6-2">Functions within the kernel involved in packet processing can be profiled using ftrace to determine the exact duration taken in processing packets. The PDM insertion function (which is a part of the PDM Kernel Implementation) call duration was measured for a duration of 5 minutes while running an iperf3 server session. For egress eBPF program, the duration of dev_queue_xmit() function call in the kernel was measured with and without the eBPF egress program attached for a duration of 5 minutes while running an iperf3 server session. Similarly, for the ingress eBPF program, the duration of netif_receive_skb_list_internal() function call in the kernel was measured with and without the eBPF ingress program attached for a duration of 5 minutes while running an iperf3 server session..<a href="#section-6.6-2" class="pilcrow">¶</a></p>
-<p id="section-6.6-3">The PDM insertion function call duration, measured in microseconds, exhibits a mean of approximately 0.642, with a standard deviation indicating a tight clustering of results around this mean. This level of precision in time measurement reflects the efficiency of the kernel's processing capabilities.<a href="#section-6.6-3" class="pilcrow">¶</a></p>
-<p id="section-6.6-4">The profiling of eBPF egress program with respect to packet processing latency is done by calculating the difference in the duration of dev_queue_xmit() function call in the kernel with and without the eBPF egress program attached. The mean duration of the function call with the eBPF egress program attached is approximately 6.117 µs, with a standard deviation of 0.769 µs. The mean duration of the function call with the eBPF egress program detached is approximately 4.899 µs, with a standard deviation of 0.779 µs. This indicates that the eBPF egress program introduces a latency of approximately 1.218 µs.<a href="#section-6.6-4" class="pilcrow">¶</a></p>
-<p id="section-6.6-5">The profiling of eBPF ingress program with respect to packet processing latency is done by calculating the difference in the duration of netif_receive_skb_list_internal() function call in the kernel with and without the eBPF ingress program attached. The mean duration of the function call with the eBPF ingress program attached is approximately 5.790 µs, with a standard deviation of 3.156 µs. The mean duration of the function call with the eBPF ingress program detached is approximately 3.060 µs, with a standard deviation of 0.949 µs. This indicates that the eBPF ingress program introduces a latency of approximately 2.730 µs.<a href="#section-6.6-5" class="pilcrow">¶</a></p>
-<p id="section-6.6-6">The comparison between kernel-based PDM insertion and eBPF program profiling indicates distinct latencies in packet processing. The kernel approach demonstrates high efficiency with minimal processing time, whereas the eBPF egress and ingress programs introduce noticeable additional latencies. This implies that while eBPF provides flexibility and programmability, it comes at the cost of increased processing time. Consequently, in environments where low latency is crucial, the kernel-based approach might be preferable, whereas eBPF could be more suitable for scenarios where programmability and complex packet processing are prioritized.<a href="#section-6.6-6" class="pilcrow">¶</a></p>
+<p id="section-6.6-2">Functions within the kernel involved in packet processing can be profiled using ftrace to determine the exact duration taken in processing packets. The PDM insertion function (which is a part of the PDM Kernel Implementation) call duration was measured for a duration of 15 minutes while running an iperf3 server session.<a href="#section-6.6-2" class="pilcrow">¶</a></p>
+<p id="section-6.6-3">For egress eBPF program, the duration of dev_queue_xmit() function call in the kernel was measured with and without the eBPF egress program attached for a duration of 15 minutes while running an iperf3 server session. Similarly, for the ingress eBPF program, the duration of netif_receive_skb_list_internal() function call in the kernel was measured with and without the eBPF ingress program attached for a duration of 15 minutes while running an iperf3 server session.<a href="#section-6.6-3" class="pilcrow">¶</a></p>
+<p id="section-6.6-4">The profiling of eBPF egress program with respect to packet processing latency is done by calculating the difference in the duration of dev_queue_xmit() function call in the kernel with and without the eBPF egress program attached. This indicates that the eBPF egress program introduces a latency of approximately 1.280 µs.<a href="#section-6.6-4" class="pilcrow">¶</a></p>
+<p id="section-6.6-5">The profiling of eBPF ingress program with respect to packet processing latency is done by calculating the difference in the duration of netif_receive_skb_list_internal() function call in the kernel with and without the eBPF ingress program attached. This indicates that the eBPF ingress program introduces a latency of approximately 0.552 µs.
+It should be noted however that ftrace is affected by context switches and scheduling latencies in the kernel and the scheduling of the VM itself on the host.<a href="#section-6.6-5" class="pilcrow">¶</a></p>
 </section>
 </div>
 </section>
@@ -1596,10 +1645,10 @@ kernel implementation, the pdm_insert function call duration was measured for a 
       <h2 id="name-security-considerations">
 <a href="#section-7" class="section-number selfRef">7. </a><a href="#name-security-considerations" class="section-name selfRef">Security Considerations</a>
       </h2>
-<p id="section-7-1">BPF utilizes maps to store various data elements, including 5-tuple information about network flows. These maps have a configurable limit on the number of entries they can hold, which is crucial for efficient memory usage and performance optimization. However, this characteristic also opens up a potential vulnerability to resource exhaustion attacks.
-An attacker, by intentionally sending packets with numerous distinct 5-tuples, could overrun the BPF maps. As these maps reach their maximum capacity, legitimate new entries cannot be added, or lead to existing entries being replaced by the new flows, potentially leading to incorrect packet processing or denial of service as critical flows might be untracked or misclassified. This scenario is particularly concerning in high-throughput environments where the rate of new flow creation is significant.
-To mitigate such attacks, it is essential to implement a robust mechanism that not only monitors the usage of BPF maps but also employs intelligent strategies to handle map overruns. This could include techniques like early eviction of least-recently-used entries, dynamic resizing of maps based on traffic patterns, or even alert mechanisms for anomalous growth in map entries.
-Additionally, rate-limiting strategies could be enforced at the network edge to prevent an overwhelming number of new flows from entering the network, thus offering a first line of defense against such resource exhaustion attacks.<a href="#section-7-1" class="pilcrow">¶</a></p>
+<p id="section-7-1">BPF utilizes maps to store various data elements, including 5-tuple information about network flows. These maps have a configurable limit on the number of entries they can hold, which is crucial for efficient memory usage and performance optimization. However, this characteristic also opens up a potential vulnerability to resource exhaustion attacks.<a href="#section-7-1" class="pilcrow">¶</a></p>
+<p id="section-7-2">An attacker, by intentionally sending packets with numerous distinct 5-tuples, could overrun the BPF maps. As these maps reach their maximum capacity, legitimate new entries cannot be added, or lead to existing entries being replaced by the new flows, potentially leading to incorrect packet processing or denial of service as critical flows might be untracked or misclassified. This scenario is particularly concerning in high-throughput environments where the rate of new flow creation is significant.<a href="#section-7-2" class="pilcrow">¶</a></p>
+<p id="section-7-3">To mitigate such attacks, it is essential to implement a robust mechanism that not only monitors the usage of BPF maps but also employs intelligent strategies to handle map overruns. This could include techniques like early eviction of least-recently-used entries, dynamic resizing of maps based on traffic patterns, or even alert mechanisms for anomalous growth in map entries.<a href="#section-7-3" class="pilcrow">¶</a></p>
+<p id="section-7-4">Additionally, rate-limiting strategies could be enforced at the network edge to prevent an overwhelming number of new flows from entering the network, thus offering a first line of defense against such resource exhaustion attacks.<a href="#section-7-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="iana-considerations">
