@@ -4,8 +4,8 @@
 
 Network Working Group                                            Chinmay
 Internet-Draft                                            NITK Surathkal
-Intended status: Informational                          18 February 2024
-Expires: 21 August 2024
+Intended status: Informational                          19 February 2024
+Expires: 22 August 2024
 
 
   Performance Evaluation of PDM Implementation using eBPF in TC versus
@@ -51,7 +51,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 21 August 2024.
+   This Internet-Draft will expire on 22 August 2024.
 
 Copyright Notice
 
@@ -89,6 +89,10 @@ Table of Contents
      6.1.  Experiment Setup
      6.2.  Performance Metrics
      6.3.  CPU Performance
+       6.3.1.  CPU Usage in cycles
+       6.3.2.  CPU usage as a percentage of total CPU cycles
+       6.3.3.  PDM eBPF Implementation
+       6.3.4.  PDM Kernel Implementation
      6.4.  Memory Usage
      6.5.  Network Throughput
      6.6.  Packet Processing Latency
@@ -429,71 +433,53 @@ Table of Contents
    running Ubuntu 22.04 server operating system running linux kernel of
    version 5.15.148 which was compiled using the same kernel
    configuration as the prepackaged kernel 5.15.94.  Both the VMs are
-   running on the same physical server using Qemu/KVM as hypervisor.
+   running on the same physical server using Qemu/KVM as hypervisor.  We
+   compared the performance of the eBPF implementation of PDM with a
+   traditional kernel implementation of PDM (add reference).  The
+   performance metrics used for comparison are CPU Performance, Memory
+   Usage, Network Throughput and Packet Processing Latency.
 
 6.2.  Performance Metrics
-
-   +--------------------------------+------------+------------+---------
-   --+
-   |  CPU Usage                                       | 
-   Mean            |  Median        |  St. Dev.       |
-   +--------------------------------+-----------------------------------
-   --+
-   | eBPF Egress CPU cycles                  | 
-   8.60e10        | 8.54e10          |  9.08e9       |
-   | eBPF Ingress CPU cycles                 |  1.53e10         | 
-   1.57e10          |  8.71e9        |
-   |  PDM Kernel CPU cycles                 |  2.29e9          | 
-   2.13e9           |  6.49e8       |
-   +--------------------------------+------------+------------+---------
-   --+
-   |  Network Throughput
-   (Gbps)         | Mean            | Median          | St. Dev.       |
-   +--------------------------------+-----------------------------------
-   --+
-   | Without PDM                                    |  18.80 Gbps  | 
-   18.58 Gbps  |  2.19 Gbps   |
-   |  PDM Kernel Implementation         |  18.52 Gbps  |  18.33 Gbps  | 
-   2.21 Gbps   |
-   |  eBPF Implementation                     |  18.03 Gbps  |  17.22
-   Gbps   |  2.51 Gbps   |
-   +--------------------------------+------------+------------+---------
-   --+
-   |  Packet Processing Latency (µs)     |  Mean           | 
-   Median         |  St. Dev.     |
-   +--------------------------------+------------+------------+---------
-   --+
-   |  PDM Kernel Implementation         |  0.642 µs      |  0.640
-   µs       |  0.268 µs    |
-   |  eBPF Egress Program Attached     |  6.117 µs        |  6.263
-   µs       |  0.769 µs    |
-   |  eBPF Egress Program Detached    |  4.899 µs      |  4.938
-   µs       |  0.779 µs     |
-   |  eBPF Ingress Program Attached    |  5.790 µs      |  4.550
-   µs       |  3.156 µs     |
-   |  eBPF Ingress Program Detached   |  3.060 µs     |  3.310
-   µs        |  0.949 µs    |
-   +--------------------------------------------------------------------
-   --+
 
 6.3.  CPU Performance
 
    Profiling of CPU cycles consumed by eBPF programs and the kernel
    implementation has been performed to evaluate the computational
    overhead introduced by these functions.  The perf tool configured to
-   sample CPU cycles at a fine-grained polling frequency of 10,000 Hz
-   was used to capture CPU cycle events.  Each experiment was structured
-   to run an iperf3 server session for a duration of five minutes,
-   simulating a consistent and controlled traffic load.  This procedure
-   was replicated across fifty individual trials to amass a robust data
-   set.  The repetition of these trials under uniform conditions allowed
-   for the collection of a comprehensive profile of CPU cycle usage,
-   which is critical for evaluating the efficiency and scalability of
-   the eBPF processing within real-world networking scenarios.
+   sample CPU cycles at a polling frequency of 10,000 Hz to capture CPU
+   cycle events.  Each experiment was structured to run an iperf3 server
+   session for a duration of five minutes, simulating a consistent and
+   controlled traffic load.  This procedure was replicated across fifty
+   individual trials.  The repetition of these trials under uniform
+   conditions allowed for the collection of a comprehensive profile of
+   CPU cycle usage, which is critical for evaluating the efficiency and
+   scalability of the eBPF processing within real-world networking
+   scenarios.  For the eBPF program, Perf is able to record data for
+   egress and ingress programs separately.  For the kernel
+   implementation, the pdm_insert function call duration was measured
+   for a duration of 5 minutes while running an iperf3 server session.
+
+6.3.1.  CPU Usage in cycles
+
+     +===================+==============+==============+=============+
+     | CPU Usage(cycles) | Mean         | Median       | St. Dev.    |
+     +===================+==============+==============+=============+
+     | eBPF Egress       | 8.60e10 cyc. | 8.54e10 cyc. | 9.08e9 cyc. |
+     +-------------------+--------------+--------------+-------------+
+     | eBPF Ingress      | 1.53e10 cyc. | 1.57e10 cyc. | 8.71e9 cyc. |
+     +-------------------+--------------+--------------+-------------+
+     | PDM Kernel        | 2.29e9 cyc.  | 2.13e9 cyc.  | 6.49e8 cyc. |
+     +-------------------+--------------+--------------+-------------+
+
+                                  Table 1
+
+6.3.2.  CPU usage as a percentage of total CPU cycles
+
+6.3.3.  PDM eBPF Implementation
 
    The egress function, which is responsible for inserting a constructed
    extension header into each packet, shows a mean CPU cycle count of
-   approximately 8.6e10 CPU cycles, with a standard deviation of 9.07e9
+   approximately 8.6e10 CPU cycles, with a standard deviation of 9.08e9
    CPU cycles, indicating a moderate dispersion around the mean.  In
    contrast, the ingress function, tasked with timestamping and reading
    a field from incoming packets, has a significantly lower mean cycle
@@ -513,10 +499,9 @@ Table of Contents
    observed, implying discrepancies in CPU loads across multiple
    executions.  Such variability necessitates careful consideration in
    system design to ensure reliability and efficiency, especially under
-   conditions of high network throughput.  The correlation between the
-   volume of data processed and the CPU cycles expended emphasizes the
-   need for meticulous optimization of eBPF programs to prevent
-   performance bottlenecks in traffic-dense environments.
+   conditions of high network throughput.
+
+6.3.4.  PDM Kernel Implementation
 
    In the kernel implementation of the IPv6 Performance and Diagnostic
    Metrics (PDM), the construction and insertion of the extension header
@@ -563,6 +548,18 @@ Table of Contents
 
 6.5.  Network Throughput
 
+    +===========================+============+============+===========+
+    | Network Throughput        | Mean       | Median     | St. Dev.  |
+    +===========================+============+============+===========+
+    | Without PDM               | 18.80 Gbps | 18.58 Gbps | 2.19 Gbps |
+    +---------------------------+------------+------------+-----------+
+    | PDM Kernel Implementation | 18.52 Gbps | 18.33 Gbps | 2.21 Gbps |
+    +---------------------------+------------+------------+-----------+
+    | eBPF Implementation       | 18.03 Gbps | 17.22 Gbps | 2.51 Gbps |
+    +---------------------------+------------+------------+-----------+
+
+                                  Table 2
+
    Profiling of Network Throughput consumed by attaching PDM extension
    header has been done to determine the throughput overhead.  Each
    experiment was structured to run an iperf3 server session for a
@@ -587,6 +584,22 @@ Table of Contents
    especially in high-throughput environments.
 
 6.6.  Packet Processing Latency
+
+    +===============================+==========+==========+==========+
+    | Packet Processing Latency     | Mean     | Median   | St. Dev. |
+    +===============================+==========+==========+==========+
+    | PDM Kernel Implementation     | 0.642 µs | 0.640 µs | 0.268 µs |
+    +-------------------------------+----------+----------+----------+
+    | eBPF Egress Program Attached  | 6.117 µs | 6.263 µs | 0.769 µs |
+    +-------------------------------+----------+----------+----------+
+    | eBPF Egress Program Detached  | 4.899 µs | 4.938 µs | 0.779 µs |
+    +-------------------------------+----------+----------+----------+
+    | eBPF Ingress Program Attached | 5.790 µs | 4.550 µs | 3.156 µs |
+    +-------------------------------+----------+----------+----------+
+    | eBPF Ingress Program Detached | 3.060 µs | 3.310 µs | 0.949 µs |
+    +-------------------------------+----------+----------+----------+
+
+                                 Table 3
 
    Functions within the kernel involved in packet processing can be
    profiled using ftrace to determine the exact duration taken in
