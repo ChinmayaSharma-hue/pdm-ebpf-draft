@@ -32,6 +32,15 @@ author:
     fullname: "Amogh Umesh"
     organization: "NITK Surathkal"
     email: "amoghumesh02@gmail.com"
+  -
+    fullname: "Balajinaidu V"
+    organization: "NITK Surathkal"
+    email: "balajinaiduhanur@gmail.com"
+  -
+    fullname: "Mohit P. Tahiliani"
+    organization: "NITK Surathkal"
+    email: "tahiliani@nitk.edu.in"
+
 
 normative:
 
