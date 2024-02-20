@@ -43,9 +43,9 @@ author:
 
 
 normative:
+  RFC8250: RFC8250
 
 informative:
-
 
 --- abstract
 
@@ -106,7 +106,7 @@ A BPF program is attachable to the egress point of the clsact qdisc designated f
 
 In cases where the extension header is stateless, an egress BPF program alone might be adequate, as no flow-related measurements are required. The data to be integrated into the extension header solely depends on the current outgoing packet. If the extension header fields depend on the data from incoming packets or previously sent packets, utilizing BPF maps becomes necessary to store and subsequently utilize this data for computing specific fields in the extension headers.
 
-The egress BPF program also has access to a similar set of actions. For instance, if a packet is discovered to be malformed, the program has the capacity to drop the packet using TC_ACT_SHOT before it is transmitted. Conversely, successful addition of the extension header necessitates the return of TC_ACT_OK, propelling the packet to the subsequent phase in the network stack.
+The egress BPF program also has access to a similar set of actions. For instance, if a packet is discovered to be malformed, the program has the capacity to drop the packet using TC_ACT_SHOT before it is transmitted. Successful addition of the extension header necessitates the return of TC_ACT_OK, propelling the packet to the subsequent phase in the network stack.
 
 The additional advantage of using TC or any other eBPF hook point is that if the data received in the extension headers were of interest in terms of logging and monitoring, the exporting of this data is made really simple through the use of eBPF maps which are accessible from both kernel space and user space. BPF maps of types BPF_MAP_TYPE_PERF_EVENT_ARRAY and BPF_MAP_TYPE_RINGBUF can be used for streaming of the real time data obtained from the extension headers. They give fine grain control to the eBPF program for poll/epoll notifications to any userspace consumer about new data availability in the buffers.
 
@@ -272,4 +272,4 @@ This document has no IANA actions.
 # Acknowledgments
 {:numbered="false"}
 
-TODO acknowledge.
+The Authors extend their gratitude to Ameya Deshpande for providing the kernel implementation of PDM, which served as a  basis for comparison with the eBPF implementation.
