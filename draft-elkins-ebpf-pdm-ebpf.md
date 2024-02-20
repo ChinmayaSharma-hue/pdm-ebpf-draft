@@ -25,6 +25,10 @@ venue:
 
 author:
   -
+    fullname: "Nalini Elkins"
+    organization: "Inside Products, Inc."
+    email: "nalini.elkins@insidethestack.com"
+  -
     fullname: "Chinmaya Sharma"
     organization: "NITK Surathkal"
     email: "chinmaysharma1020@gmail.com"
