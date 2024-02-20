@@ -1329,7 +1329,7 @@ appear in all capitals, as shown here.<a href="#section-2-1" class="pilcrow">¶<
           </h4>
 <p id="section-3.2.2-1">A BPF program is attachable to the egress point of the clsact qdisc designated for a specific network interface, functioning for every packet exiting this interface. The role of this egress BPF program includes preparing space for the extension header in the skb, assembling the extension header tailored for the particular outbound packet, and appending the extension header to the packet.<a href="#section-3.2.2-1" class="pilcrow">¶</a></p>
 <p id="section-3.2.2-2">In cases where the extension header is stateless, an egress BPF program alone might be adequate, as no flow-related measurements are required. The data to be integrated into the extension header solely depends on the current outgoing packet. If the extension header fields depend on the data from incoming packets or previously sent packets, utilizing BPF maps becomes necessary to store and subsequently utilize this data for computing specific fields in the extension headers.<a href="#section-3.2.2-2" class="pilcrow">¶</a></p>
-<p id="section-3.2.2-3">The egress BPF program also has access to a similar set of actions. For instance, if a packet is discovered to be malformed, the program has the capacity to drop the packet using TC_ACT_SHOT before it is transmitted. Conversely, successful addition of the extension header necessitates the return of TC_ACT_OK, propelling the packet to the subsequent phase in the network stack.<a href="#section-3.2.2-3" class="pilcrow">¶</a></p>
+<p id="section-3.2.2-3">The egress BPF program also has access to a similar set of actions. For instance, if a packet is discovered to be malformed, the program has the capacity to drop the packet using TC_ACT_SHOT before it is transmitted. Successful addition of the extension header necessitates the return of TC_ACT_OK, propelling the packet to the subsequent phase in the network stack.<a href="#section-3.2.2-3" class="pilcrow">¶</a></p>
 <p id="section-3.2.2-4">The additional advantage of using TC or any other eBPF hook point is that if the data received in the extension headers were of interest in terms of logging and monitoring, the exporting of this data is made really simple through the use of eBPF maps which are accessible from both kernel space and user space. BPF maps of types BPF_MAP_TYPE_PERF_EVENT_ARRAY and BPF_MAP_TYPE_RINGBUF can be used for streaming of the real time data obtained from the extension headers. They give fine grain control to the eBPF program for poll/epoll notifications to any userspace consumer about new data availability in the buffers.<a href="#section-3.2.2-4" class="pilcrow">¶</a></p>
 </section>
 </div>
@@ -1680,8 +1680,12 @@ It should be noted however that ftrace is affected by context switches and sched
 <span class="refAuthor">Bradner, S.</span>, <span class="refTitle">"Key words for use in RFCs to Indicate Requirement Levels"</span>, <span class="seriesInfo">BCP 14</span>, <span class="seriesInfo">RFC 2119</span>, <span class="seriesInfo">DOI 10.17487/RFC2119</span>, <time datetime="1997-03" class="refDate">March 1997</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc2119">https://www.rfc-editor.org/rfc/rfc2119</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 <dt id="RFC8174">[RFC8174]</dt>
-    <dd>
+      <dd>
 <span class="refAuthor">Leiba, B.</span>, <span class="refTitle">"Ambiguity of Uppercase vs Lowercase in RFC 2119 Key Words"</span>, <span class="seriesInfo">BCP 14</span>, <span class="seriesInfo">RFC 8174</span>, <span class="seriesInfo">DOI 10.17487/RFC8174</span>, <time datetime="2017-05" class="refDate">May 2017</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc8174">https://www.rfc-editor.org/rfc/rfc8174</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC8250">[RFC8250]</dt>
+    <dd>
+<span class="refAuthor">Elkins, N.</span>, <span class="refAuthor">Hamilton, R.</span>, and <span class="refAuthor">M. Ackermann</span>, <span class="refTitle">"IPv6 Performance and Diagnostic Metrics (PDM) Destination Option"</span>, <span class="seriesInfo">RFC 8250</span>, <span class="seriesInfo">DOI 10.17487/RFC8250</span>, <time datetime="2017-09" class="refDate">September 2017</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc8250">https://www.rfc-editor.org/rfc/rfc8250</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 </dl>
 </section>
@@ -1691,7 +1695,7 @@ It should be noted however that ftrace is affected by context switches and sched
       <h2 id="name-acknowledgments">
 <a href="#name-acknowledgments" class="section-name selfRef">Acknowledgments</a>
       </h2>
-<p id="appendix-A-1">TODO acknowledge.<a href="#appendix-A-1" class="pilcrow">¶</a></p>
+<p id="appendix-A-1">The Authors extend their gratitude to Ameya Deshpande for providing the kernel implementation of PDM, which served as a  basis for comparison with the eBPF implementation.<a href="#appendix-A-1" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="authors-addresses">

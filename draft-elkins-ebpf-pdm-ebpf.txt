@@ -262,7 +262,7 @@ Table of Contents
    The egress BPF program also has access to a similar set of actions.
    For instance, if a packet is discovered to be malformed, the program
    has the capacity to drop the packet using TC_ACT_SHOT before it is
-   transmitted.  Conversely, successful addition of the extension header
+   transmitted.  Successful addition of the extension header
    necessitates the return of TC_ACT_OK, propelling the packet to the
    subsequent phase in the network stack.
 
@@ -707,9 +707,16 @@ Table of Contents
               2119 Key Words", BCP 14, RFC 8174, DOI 10.17487/RFC8174,
               May 2017, <https://www.rfc-editor.org/rfc/rfc8174>.
 
+   [RFC8250]  Elkins, N., Hamilton, R., and M. Ackermann, "IPv6
+              Performance and Diagnostic Metrics (PDM) Destination
+              Option", RFC 8250, DOI 10.17487/RFC8250, September 2017,
+              <https://www.rfc-editor.org/rfc/rfc8250>.
+
 Acknowledgments
 
-   TODO acknowledge.
+   The Authors extend their gratitude to Ameya Deshpande for providing
+   the kernel implementation of PDM, which served as a basis for
+   comparison with the eBPF implementation.
 
 Authors' Addresses
 
