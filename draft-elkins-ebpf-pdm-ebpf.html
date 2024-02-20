@@ -1208,27 +1208,24 @@ svg :is([fill="white"], [fill^="#fff"]) {
                 <p id="section-toc.1-1.6.2.1.1"><a href="#section-6.1" class="auto internal xref">6.1</a>.  <a href="#name-experiment-setup" class="internal xref">Experiment Setup</a></p>
 </li>
               <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.6.2.2">
-                <p id="section-toc.1-1.6.2.2.1"><a href="#section-6.2" class="auto internal xref">6.2</a>.  <a href="#name-performance-metrics" class="internal xref">Performance Metrics</a></p>
-</li>
-              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.6.2.3">
-                <p id="section-toc.1-1.6.2.3.1"><a href="#section-6.3" class="auto internal xref">6.3</a>.  <a href="#name-cpu-performance" class="internal xref">CPU Performance</a></p>
+                <p id="section-toc.1-1.6.2.2.1"><a href="#section-6.2" class="auto internal xref">6.2</a>.  <a href="#name-cpu-performance" class="internal xref">CPU Performance</a></p>
 <ul class="compact toc ulBare ulEmpty">
-<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.6.2.3.2.1">
-                    <p id="section-toc.1-1.6.2.3.2.1.1"><a href="#section-6.3.1" class="auto internal xref">6.3.1</a>.  <a href="#name-cpu-usage-in-cycles" class="internal xref">CPU Usage in cycles</a></p>
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.6.2.2.2.1">
+                    <p id="section-toc.1-1.6.2.2.2.1.1"><a href="#section-6.2.1" class="auto internal xref">6.2.1</a>.  <a href="#name-cpu-usage-in-cycles" class="internal xref">CPU Usage in cycles</a></p>
 </li>
-                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.6.2.3.2.2">
-                    <p id="section-toc.1-1.6.2.3.2.2.1"><a href="#section-6.3.2" class="auto internal xref">6.3.2</a>.  <a href="#name-cpu-usage-as-a-percentage-o" class="internal xref">CPU usage as a percentage of total CPU cycles</a></p>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.6.2.2.2.2">
+                    <p id="section-toc.1-1.6.2.2.2.2.1"><a href="#section-6.2.2" class="auto internal xref">6.2.2</a>.  <a href="#name-cpu-usage-as-a-percentage-o" class="internal xref">CPU usage as a percentage of total CPU cycles</a></p>
 </li>
                 </ul>
 </li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.6.2.3">
+                <p id="section-toc.1-1.6.2.3.1"><a href="#section-6.3" class="auto internal xref">6.3</a>.  <a href="#name-memory-usage" class="internal xref">Memory Usage</a></p>
+</li>
               <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.6.2.4">
-                <p id="section-toc.1-1.6.2.4.1"><a href="#section-6.4" class="auto internal xref">6.4</a>.  <a href="#name-memory-usage" class="internal xref">Memory Usage</a></p>
+                <p id="section-toc.1-1.6.2.4.1"><a href="#section-6.4" class="auto internal xref">6.4</a>.  <a href="#name-network-throughput" class="internal xref">Network Throughput</a></p>
 </li>
               <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.6.2.5">
-                <p id="section-toc.1-1.6.2.5.1"><a href="#section-6.5" class="auto internal xref">6.5</a>.  <a href="#name-network-throughput" class="internal xref">Network Throughput</a></p>
-</li>
-              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.6.2.6">
-                <p id="section-toc.1-1.6.2.6.1"><a href="#section-6.6" class="auto internal xref">6.6</a>.  <a href="#name-packet-processing-latency" class="internal xref">Packet Processing Latency</a></p>
+                <p id="section-toc.1-1.6.2.5.1"><a href="#section-6.5" class="auto internal xref">6.5</a>.  <a href="#name-packet-processing-latency" class="internal xref">Packet Processing Latency</a></p>
 </li>
             </ul>
 </li>
@@ -1416,27 +1413,20 @@ appear in all capitals, as shown here.<a href="#section-2-1" class="pilcrow">¶<
 <p id="section-6.1-1">Two Virtual Machines with 8 cores, 16 GB of Ram and 64 GB of disk space were used to run the following tests. The Virtual Machines are running Ubuntu 22.04 server operating system running linux kernel of version 5.15.148 which was compiled using the same kernel configuration as the prepackaged kernel 5.15.94. Both the VMs are running on the same physical server using Qemu/KVM as hypervisor. We compared the performance of the eBPF implementation of PDM with a traditional kernel implementation of PDM (add reference). The performance metrics used for comparison are CPU Performance, Memory Usage, Network Throughput and Packet Processing Latency.<a href="#section-6.1-1" class="pilcrow">¶</a></p>
 </section>
 </div>
-<div id="performance-metrics">
-<section id="section-6.2">
-        <h3 id="name-performance-metrics">
-<a href="#section-6.2" class="section-number selfRef">6.2. </a><a href="#name-performance-metrics" class="section-name selfRef">Performance Metrics</a>
-      </h3>
-</section>
-</div>
 <div id="cpu-performance">
-<section id="section-6.3">
+<section id="section-6.2">
         <h3 id="name-cpu-performance">
-<a href="#section-6.3" class="section-number selfRef">6.3. </a><a href="#name-cpu-performance" class="section-name selfRef">CPU Performance</a>
+<a href="#section-6.2" class="section-number selfRef">6.2. </a><a href="#name-cpu-performance" class="section-name selfRef">CPU Performance</a>
         </h3>
-<p id="section-6.3-1">Profiling of CPU cycles consumed by eBPF programs and the kernel implementation has been performed to evaluate the computational overhead introduced by these functions. The perf tool was used to capture CPU cycle events and configured with a polling frequency of 10,000 Hz.<a href="#section-6.3-1" class="pilcrow">¶</a></p>
-<p id="section-6.3-2">Each experiment was structured to run an iperf3 server session using TCP for a duration of 600 seconds or five minutes, simulating a consistent and controlled traffic load. Iperf was also configured to use an MSS value of 1000 bytes across all tests while the MTU of the interface and path was 1500 bytes. This allowed us to avoid accounting for packet size becoming greater than the MTU in the eBPF program.<a href="#section-6.3-2" class="pilcrow">¶</a></p>
-<p id="section-6.3-3">This procedure was replicated across fifty individual trials per implementation. The repetition of these trials under uniform conditions and for a long duration allowed for the collection of a comprehensive profile of CPU cycle usage, which is useful for evaluating the efficiency and scalability of the eBPF processing in real-world networking scenarios.<a href="#section-6.3-3" class="pilcrow">¶</a></p>
-<p id="section-6.3-4">For the eBPF program, perf is able to record data for egress and ingress programs separately. For the
-kernel implementation, the pdm_insert function call duration was measured for each iperf3 server session. This represents the overhead in egress in the kernel implementation.<a href="#section-6.3-4" class="pilcrow">¶</a></p>
+<p id="section-6.2-1">Profiling of CPU cycles consumed by eBPF programs and the kernel implementation has been performed to evaluate the computational overhead introduced by these functions. The perf tool was used to capture CPU cycle events and configured with a polling frequency of 10,000 Hz.<a href="#section-6.2-1" class="pilcrow">¶</a></p>
+<p id="section-6.2-2">Each experiment was structured to run an iperf3 server session using TCP for a duration of 600 seconds or five minutes, simulating a consistent and controlled traffic load. Iperf was also configured to use an MSS value of 1000 bytes across all tests while the MTU of the interface and path was 1500 bytes. This allowed us to avoid accounting for packet size becoming greater than the MTU in the eBPF program.<a href="#section-6.2-2" class="pilcrow">¶</a></p>
+<p id="section-6.2-3">This procedure was replicated across fifty individual trials per implementation. The repetition of these trials under uniform conditions and for a long duration allowed for the collection of a comprehensive profile of CPU cycle usage, which is useful for evaluating the efficiency and scalability of the eBPF processing in real-world networking scenarios.<a href="#section-6.2-3" class="pilcrow">¶</a></p>
+<p id="section-6.2-4">For the eBPF program, perf is able to record data for egress and ingress programs separately. For the
+kernel implementation, the pdm_insert function call duration was measured for each iperf3 server session. This represents the overhead in egress in the kernel implementation.<a href="#section-6.2-4" class="pilcrow">¶</a></p>
 <div id="cpu-usage-in-cycles">
-<section id="section-6.3.1">
+<section id="section-6.2.1">
           <h4 id="name-cpu-usage-in-cycles">
-<a href="#section-6.3.1" class="section-number selfRef">6.3.1. </a><a href="#name-cpu-usage-in-cycles" class="section-name selfRef">CPU Usage in cycles</a>
+<a href="#section-6.2.1" class="section-number selfRef">6.2.1. </a><a href="#name-cpu-usage-in-cycles" class="section-name selfRef">CPU Usage in cycles</a>
           </h4>
 <table class="center" id="table-1">
             <caption><a href="#table-1" class="selfRef">Table 1</a></caption>
@@ -1472,9 +1462,9 @@ kernel implementation, the pdm_insert function call duration was measured for ea
 </section>
 </div>
 <div id="cpu-usage-as-a-percentage-of-total-cpu-cycles">
-<section id="section-6.3.2">
+<section id="section-6.2.2">
           <h4 id="name-cpu-usage-as-a-percentage-o">
-<a href="#section-6.3.2" class="section-number selfRef">6.3.2. </a><a href="#name-cpu-usage-as-a-percentage-o" class="section-name selfRef">CPU usage as a percentage of total CPU cycles</a>
+<a href="#section-6.2.2" class="section-number selfRef">6.2.2. </a><a href="#name-cpu-usage-as-a-percentage-o" class="section-name selfRef">CPU usage as a percentage of total CPU cycles</a>
           </h4>
 <table class="center" id="table-2">
             <caption><a href="#table-2" class="selfRef">Table 2</a></caption>
@@ -1507,28 +1497,28 @@ kernel implementation, the pdm_insert function call duration was measured for ea
               </tr>
             </tbody>
           </table>
-<p id="section-6.3.2-2">The CPU cycles consumed by the PDM Kernel Implementation is lower than the eBPF counterpart. This denotes a measurably higher computational demand for eBPF operations. However, it's noteworthy that the kernel approach, despite its limited flexibility compared to eBPF, demonstrates a lower overhead, signifying its streamlined efficiency.<a href="#section-6.3.2-2" class="pilcrow">¶</a></p>
-<p id="section-6.3.2-3">On a test run with call stack enabled in perf, the percentage overheads of some of the symbols invoked by
-eBPF egress function were obtained. The major portion of egress overhead is bpf map read/write operations, and memcpy operation for the copy of packet data to and from kernel memory.<a href="#section-6.3.2-3" class="pilcrow">¶</a></p>
-<p id="section-6.3.2-4">It would be interesting to examine the effect of lowering the number of bpf_skb_store_bytes and bpf_skb_load_bytes by loading the entire packet into the eBPF program, modifying the packet in the eBPF program and then storing the modified packet into skb. The current implementation invokes bpf_skb_store_bytes and bpf_skb_load_bytes many times for disjoint parts of the packet. This could be a potential optimization for the eBPF program.<a href="#section-6.3.2-4" class="pilcrow">¶</a></p>
+<p id="section-6.2.2-2">The CPU cycles consumed by the PDM Kernel Implementation is lower than the eBPF counterpart. This denotes a measurably higher computational demand for eBPF operations. However, it's noteworthy that the kernel approach, despite its limited flexibility compared to eBPF, demonstrates a lower overhead, signifying its streamlined efficiency.<a href="#section-6.2.2-2" class="pilcrow">¶</a></p>
+<p id="section-6.2.2-3">On a test run with call stack enabled in perf, the percentage overheads of some of the symbols invoked by
+eBPF egress function were obtained. The major portion of egress overhead is bpf map read/write operations, and memcpy operation for the copy of packet data to and from kernel memory.<a href="#section-6.2.2-3" class="pilcrow">¶</a></p>
+<p id="section-6.2.2-4">It would be interesting to examine the effect of lowering the number of bpf_skb_store_bytes and bpf_skb_load_bytes by loading the entire packet into the eBPF program, modifying the packet in the eBPF program and then storing the modified packet into skb. The current implementation invokes bpf_skb_store_bytes and bpf_skb_load_bytes many times for disjoint parts of the packet. This could be a potential optimization for the eBPF program.<a href="#section-6.2.2-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 </section>
 </div>
 <div id="memory-usage">
-<section id="section-6.4">
+<section id="section-6.3">
         <h3 id="name-memory-usage">
-<a href="#section-6.4" class="section-number selfRef">6.4. </a><a href="#name-memory-usage" class="section-name selfRef">Memory Usage</a>
+<a href="#section-6.3" class="section-number selfRef">6.3. </a><a href="#name-memory-usage" class="section-name selfRef">Memory Usage</a>
         </h3>
-<p id="section-6.4-1">This PDM implementation using eBPF uses memory while storing the state of the 5 tuple flows. The memory management is handled by eBPF maps. Each map entry stores a value of size 20 bytes - 2 bytes each for Packet Sequence Number This Packet (PSNTP) and Packet Sequence Number Last Received (PSNLR) and 8 bytes each for Time Last Sent (TLS) and Time Last Received (TLR).<a href="#section-6.4-1" class="pilcrow">¶</a></p>
-<p id="section-6.4-2">The BPF maps have been configured to a maximum limit of 65,536 entries. This means the implementation can handle 65,536 flows at once. While handling the maximum of these flows we will expect the total data to be stored in the eBPF maps to be 1310720 Bytes or 1.3 MB. There is additional overhead added by the eBPF maps structures themselves but the effect on this total is not very large.<a href="#section-6.4-2" class="pilcrow">¶</a></p>
-<p id="section-6.4-3">If more than 65,536 flows are encountered then new flows replace older entries in the maps. The BPF_MAP_TYPE_LRU_HASH variant of the BPF Hash Map is used in the implementation so the older flows are replaced in a least recently used fashion.<a href="#section-6.4-3" class="pilcrow">¶</a></p>
+<p id="section-6.3-1">This PDM implementation using eBPF uses memory while storing the state of the 5 tuple flows. The memory management is handled by eBPF maps. Each map entry stores a value of size 20 bytes - 2 bytes each for Packet Sequence Number This Packet (PSNTP) and Packet Sequence Number Last Received (PSNLR) and 8 bytes each for Time Last Sent (TLS) and Time Last Received (TLR).<a href="#section-6.3-1" class="pilcrow">¶</a></p>
+<p id="section-6.3-2">The BPF maps have been configured to a maximum limit of 65,536 entries. This means the implementation can handle 65,536 flows at once. While handling the maximum of these flows we will expect the total data to be stored in the eBPF maps to be 1310720 Bytes or 1.3 MB. There is additional overhead added by the eBPF maps structures themselves but the effect on this total is not very large.<a href="#section-6.3-2" class="pilcrow">¶</a></p>
+<p id="section-6.3-3">If more than 65,536 flows are encountered then new flows replace older entries in the maps. The BPF_MAP_TYPE_LRU_HASH variant of the BPF Hash Map is used in the implementation so the older flows are replaced in a least recently used fashion.<a href="#section-6.3-3" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="network-throughput">
-<section id="section-6.5">
+<section id="section-6.4">
         <h3 id="name-network-throughput">
-<a href="#section-6.5" class="section-number selfRef">6.5. </a><a href="#name-network-throughput" class="section-name selfRef">Network Throughput</a>
+<a href="#section-6.4" class="section-number selfRef">6.4. </a><a href="#name-network-throughput" class="section-name selfRef">Network Throughput</a>
         </h3>
 <table class="center" id="table-3">
           <caption><a href="#table-3" class="selfRef">Table 3</a></caption>
@@ -1561,9 +1551,9 @@ eBPF egress function were obtained. The major portion of egress overhead is bpf 
             </tr>
           </tbody>
         </table>
-<p id="section-6.5-2">Profiling of Network Throughput consumed by attaching PDM extension header has been done to determine the throughput overhead. Each experiment was structured to run an iperf3 server session using TCP for a duration of 600 seconds or five minutes, simulating a consistent and controlled traffic load. There was no perf running in any of these tests.<a href="#section-6.5-2" class="pilcrow">¶</a></p>
-<p id="section-6.5-3">This procedure was replicated across twenty five individual trials. The repetition of these trials were conducted under uniform conditions. The network throughput was measured for the case when PDM is not attached, when PDM is attached using the kernel implementation and when PDM is attached using the eBPF implementation.<a href="#section-6.5-3" class="pilcrow">¶</a></p>
-<p id="section-6.5-4">When PDM is not attached, the network throughput is the highest as expected. A slight decrease is observed in the kernel implementation, with a further decrease in the eBPF implementation. This indicates that while both methods impact network performance, the eBPF implementation has a slightly more pronounced effect. The standard deviation across these measurements suggests some variability in the test network conditions. This might be a result to consider while implementing extension headers in eBPF.<a href="#section-6.5-4" class="pilcrow">¶</a></p>
+<p id="section-6.4-2">Profiling of Network Throughput consumed by attaching PDM extension header has been done to determine the throughput overhead. Each experiment was structured to run an iperf3 server session using TCP for a duration of 600 seconds or five minutes, simulating a consistent and controlled traffic load. There was no perf running in any of these tests.<a href="#section-6.4-2" class="pilcrow">¶</a></p>
+<p id="section-6.4-3">This procedure was replicated across twenty five individual trials. The repetition of these trials were conducted under uniform conditions. The network throughput was measured for the case when PDM is not attached, when PDM is attached using the kernel implementation and when PDM is attached using the eBPF implementation.<a href="#section-6.4-3" class="pilcrow">¶</a></p>
+<p id="section-6.4-4">When PDM is not attached, the network throughput is the highest as expected. A slight decrease is observed in the kernel implementation, with a further decrease in the eBPF implementation. This indicates that while both methods impact network performance, the eBPF implementation has a slightly more pronounced effect. The standard deviation across these measurements suggests some variability in the test network conditions. This might be a result to consider while implementing extension headers in eBPF.<a href="#section-6.4-4" class="pilcrow">¶</a></p>
 <table class="center" id="table-4">
           <caption><a href="#table-4" class="selfRef">Table 4</a></caption>
 <thead>
@@ -1595,13 +1585,13 @@ eBPF egress function were obtained. The major portion of egress overhead is bpf 
             </tr>
           </tbody>
         </table>
-<p id="section-6.5-6">The TCP retransmits were extracted for the test runs conducted for network throughput. The number of TCP retransmits is higher when PDM is attached using the kernel implementation and the eBPF implementation. This might be due to a fault in the implementation itself or packet drops happening due to extension header addition.<a href="#section-6.5-6" class="pilcrow">¶</a></p>
+<p id="section-6.4-6">The TCP retransmits were extracted for the test runs conducted for network throughput. The number of TCP retransmits is higher when PDM is attached using the kernel implementation and the eBPF implementation. This might be due to a fault in the implementation itself or packet drops happening due to extension header addition.<a href="#section-6.4-6" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="packet-processing-latency">
-<section id="section-6.6">
+<section id="section-6.5">
         <h3 id="name-packet-processing-latency">
-<a href="#section-6.6" class="section-number selfRef">6.6. </a><a href="#name-packet-processing-latency" class="section-name selfRef">Packet Processing Latency</a>
+<a href="#section-6.5" class="section-number selfRef">6.5. </a><a href="#name-packet-processing-latency" class="section-name selfRef">Packet Processing Latency</a>
         </h3>
 <table class="center" id="table-5">
           <caption><a href="#table-5" class="selfRef">Table 5</a></caption>
@@ -1646,11 +1636,11 @@ eBPF egress function were obtained. The major portion of egress overhead is bpf 
             </tr>
           </tbody>
         </table>
-<p id="section-6.6-2">Functions within the kernel involved in packet processing can be profiled using ftrace to determine the exact duration taken in processing packets. The PDM insertion function (which is a part of the PDM Kernel Implementation) call duration was measured for a duration of 15 minutes while running an iperf3 server session.<a href="#section-6.6-2" class="pilcrow">¶</a></p>
-<p id="section-6.6-3">For egress eBPF program, the duration of dev_queue_xmit() function call in the kernel was measured with and without the eBPF egress program attached for a duration of 15 minutes while running an iperf3 server session. Similarly, for the ingress eBPF program, the duration of netif_receive_skb_list_internal() function call in the kernel was measured with and without the eBPF ingress program attached for a duration of 15 minutes while running an iperf3 server session.<a href="#section-6.6-3" class="pilcrow">¶</a></p>
-<p id="section-6.6-4">The profiling of eBPF egress program with respect to packet processing latency is done by calculating the difference in the duration of dev_queue_xmit() function call in the kernel with and without the eBPF egress program attached. This indicates that the eBPF egress program introduces a latency of approximately 1.280 µs.<a href="#section-6.6-4" class="pilcrow">¶</a></p>
-<p id="section-6.6-5">The profiling of eBPF ingress program with respect to packet processing latency is done by calculating the difference in the duration of netif_receive_skb_list_internal() function call in the kernel with and without the eBPF ingress program attached. This indicates that the eBPF ingress program introduces a latency of approximately 0.552 µs.
-It should be noted however that ftrace is affected by context switches and scheduling latencies in the kernel and the scheduling of the VM itself on the host.<a href="#section-6.6-5" class="pilcrow">¶</a></p>
+<p id="section-6.5-2">Functions within the kernel involved in packet processing can be profiled using ftrace to determine the exact duration taken in processing packets. The PDM insertion function (which is a part of the PDM Kernel Implementation) call duration was measured for a duration of 15 minutes while running an iperf3 server session.<a href="#section-6.5-2" class="pilcrow">¶</a></p>
+<p id="section-6.5-3">For egress eBPF program, the duration of dev_queue_xmit() function call in the kernel was measured with and without the eBPF egress program attached for a duration of 15 minutes while running an iperf3 server session. Similarly, for the ingress eBPF program, the duration of netif_receive_skb_list_internal() function call in the kernel was measured with and without the eBPF ingress program attached for a duration of 15 minutes while running an iperf3 server session.<a href="#section-6.5-3" class="pilcrow">¶</a></p>
+<p id="section-6.5-4">The profiling of eBPF egress program with respect to packet processing latency is done by calculating the difference in the duration of dev_queue_xmit() function call in the kernel with and without the eBPF egress program attached. This indicates that the eBPF egress program introduces a latency of approximately 1.280 µs.<a href="#section-6.5-4" class="pilcrow">¶</a></p>
+<p id="section-6.5-5">The profiling of eBPF ingress program with respect to packet processing latency is done by calculating the difference in the duration of netif_receive_skb_list_internal() function call in the kernel with and without the eBPF ingress program attached. This indicates that the eBPF ingress program introduces a latency of approximately 0.552 µs.
+It should be noted however that ftrace is affected by context switches and scheduling latencies in the kernel and the scheduling of the VM itself on the host.<a href="#section-6.5-5" class="pilcrow">¶</a></p>
 </section>
 </div>
 </section>

@@ -90,13 +90,12 @@ Table of Contents
    5.  Advantages of using eBPF to add extension headers
    6.  Performance Analysis
      6.1.  Experiment Setup
-     6.2.  Performance Metrics
-     6.3.  CPU Performance
-       6.3.1.  CPU Usage in cycles
-       6.3.2.  CPU usage as a percentage of total CPU cycles
-     6.4.  Memory Usage
-     6.5.  Network Throughput
-     6.6.  Packet Processing Latency
+     6.2.  CPU Performance
+       6.2.1.  CPU Usage in cycles
+       6.2.2.  CPU usage as a percentage of total CPU cycles
+     6.3.  Memory Usage
+     6.4.  Network Throughput
+     6.5.  Packet Processing Latency
    7.  Security Considerations
    8.  IANA Considerations
    9.  Normative References
@@ -460,9 +459,7 @@ Table of Contents
    performance metrics used for comparison are CPU Performance, Memory
    Usage, Network Throughput and Packet Processing Latency.
 
-6.2.  Performance Metrics
-
-6.3.  CPU Performance
+6.2.  CPU Performance
 
    Profiling of CPU cycles consumed by eBPF programs and the kernel
    implementation has been performed to evaluate the computational
@@ -491,7 +488,7 @@ Table of Contents
    session.  This represents the overhead in egress in the kernel
    implementation.
 
-6.3.1.  CPU Usage in cycles
+6.2.1.  CPU Usage in cycles
 
      +===================+==============+==============+=============+
      | CPU Usage(cycles) | Mean         | Median       | St. Dev.    |
@@ -505,7 +502,7 @@ Table of Contents
 
                                   Table 1
 
-6.3.2.  CPU usage as a percentage of total CPU cycles
+6.2.2.  CPU usage as a percentage of total CPU cycles
 
            +===================+=========+=========+==========+
            | CPU Usage(%)      | Mean    | Median  | St. Dev. |
@@ -540,7 +537,7 @@ Table of Contents
    many times for disjoint parts of the packet.  This could be a
    potential optimization for the eBPF program.
 
-6.4.  Memory Usage
+6.3.  Memory Usage
 
    This PDM implementation using eBPF uses memory while storing the
    state of the 5 tuple flows.  The memory management is handled by eBPF
@@ -561,7 +558,7 @@ Table of Contents
    BPF Hash Map is used in the implementation so the older flows are
    replaced in a least recently used fashion.
 
-6.5.  Network Throughput
+6.4.  Network Throughput
 
     +===========================+============+============+===========+
     | Network Throughput        | Mean       | Median     | St. Dev.  |
@@ -616,7 +613,7 @@ Table of Contents
    implementation.  This might be due to a fault in the implementation
    itself or packet drops happening due to extension header addition.
 
-6.6.  Packet Processing Latency
+6.5.  Packet Processing Latency
 
     +===============================+==========+==========+==========+
     | Packet Processing Latency     | Mean     | Median   | St. Dev. |
