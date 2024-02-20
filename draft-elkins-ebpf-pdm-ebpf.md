@@ -170,8 +170,6 @@ Implementing extension header insertion within the kernel can introduce developm
 
 Two Virtual Machines with 8 cores, 16 GB of Ram and 64 GB of disk space were used to run the following tests. The Virtual Machines are running Ubuntu 22.04 server operating system running linux kernel of version 5.15.148 which was compiled using the same kernel configuration as the prepackaged kernel 5.15.94. Both the VMs are running on the same physical server using Qemu/KVM as hypervisor. We compared the performance of the eBPF implementation of PDM with a traditional kernel implementation of PDM (add reference). The performance metrics used for comparison are CPU Performance, Memory Usage, Network Throughput and Packet Processing Latency.
 
-## Performance Metrics
-
 ## CPU Performance
 
 Profiling of CPU cycles consumed by eBPF programs and the kernel implementation has been performed to evaluate the computational overhead introduced by these functions. The perf tool was used to capture CPU cycle events and configured with a polling frequency of 10,000 Hz.
